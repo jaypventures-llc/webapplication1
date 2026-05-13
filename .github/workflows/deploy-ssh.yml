@@ -4,41 +4,11 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /var/www/jpv-os
-            git pull
-            docker compose up -d --build
-  deploy:
-name: Deploy to Alternate Host via SSH
-
-        run: |
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-    inputs:
-      deploy_note:
-        description: Manual deployment note
-        required: false
-
-          ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "${{ secrets.SSH_DEPLOY_SCRIPT }}"
-  deploy:
-    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -55,4 +25,3 @@ name: Deploy to Alternate Host via SSH
             cd /var/www/jpv-os
             git pull
             docker compose up -d --build
-
