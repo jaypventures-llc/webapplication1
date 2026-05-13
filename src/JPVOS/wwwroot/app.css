@@ -1,0 +1,65 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #030305;
+    color: #e6e6f0;
+}
+
+.jpv-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+    background: #030305;
+}
+
+.jpv-nav-shell {
+    height: 100vh;
+    border-right: 1px solid rgba(255,255,255,.08);
+    background:
+        linear-gradient(180deg, #050816 0%, #091a4d 40%, #220033 100%);
+    padding: 32px 24px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.jpv-nav-brand {
+    color: #fff;
+    font-size: 1.3rem;
+    letter-spacing: .22em;
+    margin-bottom: 48px;
+    font-weight: 700;
+    text-shadow: 0 0 8px #2e2e5e, 0 0 2px #7a5cff;
+}
+
+.jpv-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+}
+
+.jpv-nav-links a {
+    color: rgba(255,255,255,.78);
+    text-decoration: none;
+    padding: 14px 16px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    transition: .18s cubic-bezier(.4,0,.2,1);
+    font-size: 1.05rem;
+    font-weight: 500;
+    letter-spacing: .04em;
+}
+
+.jpv-nav-links a.active,
+.jpv-nav-links a:hover {
+    border-color: #7a5cff;
+    background: rgba(122,92,255,0.08);
+    color: #fff;
+    box-shadow: 0 0 8px #7a5cff44;
+}
+
+main {
+    overflow-x: hidden;
+}
