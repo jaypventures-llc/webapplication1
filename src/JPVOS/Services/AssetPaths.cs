@@ -23,10 +23,11 @@ public static class AssetPaths
         public const string Image01 = "/assets/jaypventures/jaypventures-image-01.png";
     }
 
-    public static class JaypVLabs
+    public static class JayPVLabs
     {
         public const string Hero = "/assets/jaypvlabs/jaypvlabs-hero.png";
         public const string Image01 = "/assets/jaypvlabs/jaypvlabs-image-01.png";
+        public const string InstituteHero = "/assets/jpv-institute/jpv-institute-hero.png";
     }
 
     public static class JpvInstitute
@@ -66,11 +67,14 @@ public static class AssetPaths
     {
         public const string Hero = "/assets/jaypvlabs/jaypvlabs-hero.png";
         public const string Image01 = "/assets/jaypvlabs/jaypvlabs-image-01.png";
+        public const string InstituteHero = "/assets/jpv-institute/jpv-institute-hero.png";
     }
 
     public static class References
     {
         public const string Hero = "/assets/jpv-os/jpv-os-hero.png";
+        public const string EcosystemBoard = "/assets/jpv-os/jpv-os-topology.png";
     }
 
 }
+
