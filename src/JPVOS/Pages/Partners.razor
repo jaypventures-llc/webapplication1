@@ -2,91 +2,63 @@
 
 <section class="jpv-section partners-hero">
     <div class="jpv-kicker">Trusted Operating Stack</div>
-
     <h1 class="jpv-title">Built with an ecosystem of trusted platforms.</h1>
-
     <p class="jpv-lede">
-        JPV-OS is supported by a coordinated technology, infrastructure, creative, research,
-        gaming, enterprise, and creator-access ecosystem. Each platform contributes to identity,
-        deployment, operations, learning, creative production, monetization, infrastructure,
-        community, or public-facing execution.
+        JPV-OS is an operating ecosystem map for infrastructure, identity, deployment,
+        intelligence, creator operations, education, and workstation execution.
     </p>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Enterprise Infrastructure</div>
-        <div class="partner-grid">
-            <PartnerCard Name="Microsoft" Detail="Enterprise productivity, Windows operations, identity-adjacent infrastructure, and organizational systems." Icon="/assets/partners/microsoft.svg" />
-            <PartnerCard Name="Windows" Detail="Primary desktop operating environment for development, administration, automation, and enterprise execution." Icon="/assets/partners/windows.svg" />
-            <PartnerCard Name="Google Workspace" Detail="Email, calendar, documents, collaboration, and operational coordination." Icon="/assets/partners/google-workspace.svg" />
-            <PartnerCard Name="IBM" Detail="Enterprise systems lineage, infrastructure thinking, and institutional technology influence." Icon="/assets/partners/ibm.svg" />
-            <PartnerCard Name="Verizon" Detail="Connectivity, communications infrastructure, and network ecosystem relevance." Icon="/assets/partners/verizon.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Enterprise Infrastructure">
+        <PartnerCard Name="Microsoft" Icon="/assets/partners/microsoft.svg" Badges="Enterprise,Operations,Platform" Detail="Productivity, Windows operations, identity-adjacent infrastructure, and organizational systems." />
+        <PartnerCard Name="Windows" Icon="/assets/partners/microsoft.svg" Badges="Workstation,OS,Execution" Detail="Desktop operating environment for development, administration, automation, and enterprise execution." />
+        <PartnerCard Name="Google Workspace" Icon="/assets/partners/google-workspace.svg" Badges="Email,Calendar,Docs" Detail="Email, calendar, documents, collaboration, and operational coordination." />
+        <PartnerCard Name="IBM" Icon="/assets/partners/ibm.svg" Badges="Enterprise,Systems,Institutional" Detail="Enterprise systems lineage, infrastructure thinking, and institutional technology influence." />
+        <PartnerCard Name="Verizon" Icon="/assets/partners/verizon.svg" Badges="Network,Connectivity,Comms" Detail="Connectivity, communications infrastructure, and network ecosystem relevance." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Identity & Security</div>
-        <div class="partner-grid">
-            <PartnerCard Name="Microsoft Entra ID" Detail="Authentication, MFA, conditional access, and secure identity architecture." Icon="/assets/partners/entra-id.svg" />
-            <PartnerCard Name="Microsoft Security" Detail="Security posture, account protection, admin safeguards, and organizational risk reduction." Icon="/assets/partners/microsoft.svg" />
-            <PartnerCard Name="HashiCorp" Detail="Infrastructure-as-code concepts, deployment discipline, secrets posture, and operational automation patterns." Icon="/assets/partners/hashicorp.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Identity & Security">
+        <PartnerCard Name="Microsoft Entra ID" Icon="/assets/partners/entra-id.svg" Badges="Identity,MFA,Conditional Access" Detail="Authentication, MFA, conditional access, and secure identity architecture." />
+        <PartnerCard Name="Microsoft Security" Icon="/assets/partners/microsoft.svg" Badges="Security,Risk,Admin" Detail="Security posture, account protection, admin safeguards, and organizational risk reduction." />
+        <PartnerCard Name="HashiCorp" Icon="/assets/partners/hashicorp.svg" Badges="IaC,Secrets,Automation" Detail="Infrastructure-as-code concepts, deployment discipline, secrets posture, and operational automation patterns." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Cloud & Edge</div>
-        <div class="partner-grid">
-            <PartnerCard Name="Azure" Detail="Cloud infrastructure, deployment pathways, application hosting, and enterprise services." Icon="/assets/partners/azure.svg" />
-            <PartnerCard Name="Cloudflare" Detail="DNS, edge delivery, Pages, Workers, routing, and public web infrastructure." Icon="/assets/partners/cloudflare.svg" />
-            <PartnerCard Name="Cloudflare Workers" Detail="Serverless edge runtime for public gateway delivery, routing, and fast deployment surfaces." Icon="/assets/partners/cloudflare.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Cloud & Edge">
+        <PartnerCard Name="Azure" Icon="/assets/partners/azure.svg" Badges="Cloud,Hosting,Deployment" Detail="Cloud infrastructure, application hosting, deployment pathways, and enterprise services." />
+        <PartnerCard Name="Cloudflare" Icon="/assets/partners/cloudflare.svg" Badges="DNS,Edge,Routing" Detail="DNS, edge delivery, Pages, Workers, routing, and public web infrastructure." />
+        <PartnerCard Name="Cloudflare Workers" Icon="/assets/partners/cloudflare.svg" Badges="Serverless,Edge,Gateway" Detail="Serverless edge runtime for gateway delivery, routing, and public deployment surfaces." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Development Systems</div>
-        <div class="partner-grid">
-            <PartnerCard Name="GitHub" Detail="Repositories, CI/CD, pull requests, security workflows, governance gates, and versioned delivery." Icon="/assets/partners/github.svg" />
-            <PartnerCard Name="VS Code" Detail="Development environment, code editing, extension workflows, and implementation velocity." Icon="/assets/partners/vscode.svg" />
-            <PartnerCard Name="PowerShell" Detail="Automation, diagnostics, deployment scripting, and Windows-first operational execution." Icon="/assets/partners/powershell.svg" />
-            <PartnerCard Name="Node.js" Detail="Modern web tooling, build pipelines, package workflows, and application runtime support." Icon="/assets/partners/nodejs.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Development Systems">
+        <PartnerCard Name="GitHub" Icon="/assets/partners/github.svg" Badges="Repos,CI/CD,Governance" Detail="Repositories, pull requests, security workflows, governance gates, and versioned delivery." />
+        <PartnerCard Name="VS Code" Icon="/assets/partners/vscode.svg" Badges="Editor,Extensions,Workflow" Detail="Development environment, code editing, extension workflows, and implementation velocity." />
+        <PartnerCard Name="PowerShell" Icon="/assets/partners/powershell.svg" Badges="Automation,Diagnostics,Scripting" Detail="Automation, diagnostics, deployment scripting, and Windows-first operational execution." />
+        <PartnerCard Name="Node.js" Icon="/assets/partners/nodejs.svg" Badges="Runtime,Build,Tooling" Detail="Modern web tooling, build pipelines, package workflows, and application runtime support." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Intelligence Layer</div>
-        <div class="partner-grid">
-            <PartnerCard Name="OpenAI" Detail="AI reasoning, automation support, design acceleration, intelligence-layer development, and operational assistance." Icon="/assets/partners/openai.svg" />
-            <PartnerCard Name="GitHub Copilot" Detail="AI-assisted implementation support, code acceleration, review assistance, and developer workflow enhancement." Icon="/assets/partners/github.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Intelligence Layer">
+        <PartnerCard Name="OpenAI" Icon="/assets/partners/openai.svg" Badges="AI,Reasoning,Automation" Detail="AI reasoning, design acceleration, operational assistance, and intelligence-layer development." />
+        <PartnerCard Name="GitHub Copilot" Icon="/assets/partners/github.svg" Badges="AI,Code,Velocity" Detail="AI-assisted implementation support, code acceleration, review assistance, and developer workflow enhancement." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Creator Ecosystem</div>
-        <div class="partner-grid">
-            <PartnerCard Name="Stripe" Detail="Payments, subscriptions, monetization pathways, and entitlement-adjacent workflows." Icon="/assets/partners/stripe.svg" />
-            <PartnerCard Name="Discord" Detail="Community access, member routing, creator engagement, and communication surfaces." Icon="/assets/partners/discord.svg" />
-            <PartnerCard Name="Spotify" Detail="Audio culture, creator presence, music discovery, and media ecosystem alignment." Icon="/assets/partners/spotify.svg" />
-            <PartnerCard Name="Xbox" Detail="Gaming culture, interactive entertainment, ecosystem experience, and audience expansion." Icon="/assets/partners/xbox.svg" />
-            <PartnerCard Name="Wix" Detail="Public web presence, brand surfaces, and rapid publishing workflows." Icon="/assets/partners/wix.svg" />
-            <PartnerCard Name="Linktree" Detail="Public routing, creator links, social access, and lightweight discovery paths." Icon="/assets/partners/linktree.svg" />
-            <PartnerCard Name="Apple / iCloud" Detail="Creative workflow support, device continuity, storage, and creator identity surfaces." Icon="/assets/partners/apple-icloud.svg" />
-            <PartnerCard Name="Unreal Editor" Detail="Real-time creative production, cinematic visualization, virtual environments, and immersive design." Icon="/assets/partners/unreal-editor.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Creator Ecosystem">
+        <PartnerCard Name="Stripe" Icon="/assets/partners/stripe.svg" Badges="Payments,Subscriptions,Entitlements" Detail="Payments, subscriptions, monetization pathways, and entitlement-adjacent workflows." />
+        <PartnerCard Name="Discord" Icon="/assets/partners/discord.svg" Badges="Community,Members,Comms" Detail="Community access, member routing, creator engagement, and communication surfaces." />
+        <PartnerCard Name="Spotify" Icon="/assets/partners/spotify.svg" Badges="Audio,Media,Culture" Detail="Audio culture, creator presence, music discovery, and media ecosystem alignment." />
+        <PartnerCard Name="Xbox" Icon="/assets/partners/xbox.svg" Badges="Gaming,Audience,Interactive" Detail="Gaming culture, interactive entertainment, ecosystem experience, and audience expansion." />
+        <PartnerCard Name="Wix" Icon="/assets/partners/wix.svg" Badges="Web,Publishing,Brand" Detail="Public web presence, brand surfaces, and rapid publishing workflows." />
+        <PartnerCard Name="Linktree" Icon="/assets/partners/linktree.svg" Badges="Routing,Social,Access" Detail="Public routing, creator links, social access, and lightweight discovery paths." />
+        <PartnerCard Name="Apple / iCloud" Icon="/assets/partners/apple-icloud.svg" Badges="Creative,Storage,Continuity" Detail="Creative workflow support, device continuity, storage, and creator identity surfaces." />
+        <PartnerCard Name="Unreal Editor" Icon="/assets/partners/unreal-editor.svg" Badges="Cinematic,Realtime,Design" Detail="Real-time creative production, cinematic visualization, virtual environments, and immersive design." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Education & Research</div>
-        <div class="partner-grid">
-            <PartnerCard Name="Coursera" Detail="Learning pathways, skills development, professional education, and research support." Icon="/assets/partners/coursera.svg" />
-            <PartnerCard Name="University of Phoenix" Detail="Academic development, institutional learning, and professional education foundation." Icon="/assets/partners/university-phoenix.svg" />
-            <PartnerCard Name="JPV Institute" Detail="Research doctrine, validation standards, infrastructure literacy, and institutional knowledge development." Icon="/assets/partners/jpv-institute.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Education & Research">
+        <PartnerCard Name="Coursera" Icon="/assets/partners/coursera.svg" Badges="Learning,Skills,Education" Detail="Learning pathways, skills development, professional education, and research support." />
+        <PartnerCard Name="University of Phoenix" Icon="/assets/partners/university-phoenix.svg" Badges="Academic,Institutional,Research" Detail="Academic development, institutional learning, and professional education foundation." />
+        <PartnerCard Name="JPV Institute" Icon="/assets/partners/jpv-institute.svg" Badges="Doctrine,Validation,Standards" Detail="Research doctrine, validation standards, infrastructure literacy, and institutional knowledge development." />
+    </PartnerSection>
 
-    <div class="partner-category">
-        <div class="partner-category-title">Hardware & Workstations</div>
-        <div class="partner-grid">
-            <PartnerCard Name="HP" Detail="Primary workstation hardware, device operations, and creator-enterprise execution environment." Icon="/assets/partners/hp.svg" />
-            <PartnerCard Name="Intel" Detail="Compute platform support, graphics capability, workstation performance, and hardware ecosystem alignment." Icon="/assets/partners/intel.svg" />
-        </div>
-    </div>
+    <PartnerSection Title="Hardware & Workstations">
+        <PartnerCard Name="HP" Icon="/assets/partners/hp.svg" Badges="Hardware,Workstation,Device" Detail="Primary workstation hardware, device operations, and creator-enterprise execution environment." />
+        <PartnerCard Name="Intel" Icon="/assets/partners/intel.svg" Badges="Compute,Graphics,Performance" Detail="Compute platform support, graphics capability, workstation performance, and hardware ecosystem alignment." />
+    </PartnerSection>
 </section>

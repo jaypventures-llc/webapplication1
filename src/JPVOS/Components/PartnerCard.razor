@@ -3,9 +3,19 @@
         <img src="@Icon" alt="@Name logo" class="partner-icon" />
     </div>
 
-    <div>
+    <div class="partner-copy">
         <h3>@Name</h3>
         <p>@Detail</p>
+
+        @if (!string.IsNullOrWhiteSpace(Badges))
+        {
+            <div class="partner-meta">
+                @foreach (var badge in Badges.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    <span class="partner-badge">@badge</span>
+                }
+            </div>
+        }
     </div>
 </div>
 
@@ -13,4 +23,5 @@
     [Parameter] public string Name { get; set; } = "";
     [Parameter] public string Detail { get; set; } = "";
     [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string Badges { get; set; } = "";
 }
