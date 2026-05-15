@@ -12,7 +12,16 @@ Stripe.StripeConfiguration.ApiKey = builder.Configuration["STRIPE_SECRET_KEY"];
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
-builder.Services.AddSingleton<IEntitlementService, EntitlementService>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddSingleton<IEntitlementService, InMemoryEntitlementService>();
+}
+else
+{
+    var dbPath = Path.Combine(AppContext.BaseDirectory, "entitlements.db");
+    builder.Services.AddSingleton<IEntitlementRepository>(new SqliteEntitlementRepository(dbPath));
+    // TODO: Implement a production IEntitlementService that uses IEntitlementRepository
+}
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<DiscordService>();
 

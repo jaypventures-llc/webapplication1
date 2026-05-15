@@ -76,6 +76,22 @@ Assign the role IDs to the corresponding environment variables above.
 - [ ] Confirm entitlement state updates on payment, cancellation, and failure.
 - [ ] Confirm no secrets are present in appsettings files or source code.
 
+## 6. Persistence Requirement
+
+- **In-memory entitlement storage is NOT production-ready.**
+- For production, you must use a persistent repository (e.g., SQLite, SQL Server, or cloud DB) for entitlements.
+- The SqliteEntitlementRepository is provided for local/dev and small-scale production. For scale or compliance, use a managed database.
+
+## 7. Backup/Export Requirement
+
+- You must regularly back up the entitlement database (e.g., entitlements.db for SQLite).
+- Implement export routines for compliance and disaster recovery.
+
+## 8. Revocation Audit Requirement
+
+- All revocations (cancellation, payment failure, Discord role removal) must be logged and auditable.
+- Review entitlement and Discord role state regularly for consistency.
+
 ## 6. Production Deployment Checklist
 
 - [ ] Set all environment variables in your production environment (Azure, AWS, etc).
@@ -86,11 +102,12 @@ Assign the role IDs to the corresponding environment variables above.
 - [ ] Confirm Discord bot is in your server and has Manage Roles permission.
 - [ ] Confirm no secrets are present in appsettings files or source code.
 
-## 7. Revocation Rules
+
+## 9. Revocation Rules
 
 - On payment failure or subscription cancellation, paid Discord roles are removed and entitlement is revoked.
 - On downgrade, roles are updated to match new package.
-- EntitlementService is in-memory for development only; use persistent storage for production.
+- All revocation actions should be logged for audit.
 
 ---
 
