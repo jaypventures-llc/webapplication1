@@ -70,7 +70,7 @@
                         Description="@pkg.Description"
                         Features="@pkg.Features"
                         Cta="Get init"
-                        OnCheckout="() => StartCheckout(GetPackageKey(pkg), GetTerm(pkg))"
+                        OnCheckout="async () => await StartCheckout(GetPackageKey(pkg), GetTerm(pkg))"
                     />
                 }
                 else if (pkg.Key == "partner_package")
@@ -129,6 +129,7 @@
 
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     private async Task StartCheckout(string packageKey, string interval)
     {
         var response = await Http.PostAsJsonAsync("/api/checkout/create", new { packageKey, interval });

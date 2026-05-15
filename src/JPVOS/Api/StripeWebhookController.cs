@@ -93,7 +93,8 @@ public class StripeWebhookController : ControllerBase
                 {
                     ent.StripeSubscriptionId = sub.Id;
                     ent.Status = sub.Status;
-                    ent.AccessExpiration = sub.CurrentPeriodEnd;
+                    // Convert Unix timestamp to DateTime if available, otherwise add 1 month to current time
+                    ent.AccessExpiration = ConvertStripeTimestamp(sub);
                     _entitlementService.AddOrUpdate(ent);
                 }
                 break;
@@ -116,5 +117,36 @@ public class StripeWebhookController : ControllerBase
             }
         }
         return Ok();
+    }
+
+    private static DateTime UnixTimeStampToDateTime(long unixTimeStamp)
+    {
+        DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        dateTime = dateTime.AddSeconds(unixTimeStamp).ToUniversalTime();
+        return dateTime;
+    }
+
+    private static DateTime ConvertStripeTimestamp(Stripe.Subscription subscription)
+    {
+        // Try to get the current period end time from the subscription object
+        // using reflection to handle different API versions
+        try
+        {
+            var property = subscription.GetType().GetProperty("CurrentPeriodEnd");
+            if (property?.GetValue(subscription) is DateTime dt)
+            {
+                return dt;
+            }
+            
+            property = subscription.GetType().GetProperty("CurrentPeriodEndUnix");
+            if (property?.GetValue(subscription) is long unixTime)
+            {
+                return UnixTimeStampToDateTime(unixTime);
+            }
+        }
+        catch { }
+
+        // Fallback: add 1 month to current time
+        return DateTime.UtcNow.AddMonths(1);
     }
 }

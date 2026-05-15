@@ -1,8 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Stripe.Checkout;
+using System.Collections.Generic;
+using System.Linq;
+using JPVOS.Models;
 
 [ApiController]
+[Route("api/checkout")]
+public class CheckoutController : ControllerBase
+{
+    private readonly IConfiguration _config;
+
+    public CheckoutController(IConfiguration config)
+    {
+        _config = config;
+    }
+
     [HttpPost("create")]
     public IActionResult Create([FromBody] CheckoutRequest req)
     {
@@ -53,10 +66,5 @@ using Stripe.Checkout;
             return StatusCode(500, "Stripe session creation failed: No URL returned.");
         }
         return Ok(new { url = session.Url });
-    }
-            "enterprise_infrastructure_annual" => _config["STRIPE_PRICE_ENTERPRISE_ANNUAL"],
-            "custom_implementation_one_time" => _config["STRIPE_PRICE_CUSTOM_IMPLEMENTATION"],
-            _ => null
-        };
     }
 }
