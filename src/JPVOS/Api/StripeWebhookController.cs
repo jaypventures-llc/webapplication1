@@ -93,7 +93,7 @@ public class StripeWebhookController : ControllerBase
                 {
                     ent.StripeSubscriptionId = sub.Id;
                     ent.Status = sub.Status;
-                    ent.AccessExpiration = sub.CurrentPeriodEnd;
+                    ent.AccessExpiration = null;
                     _entitlementService.AddOrUpdate(ent);
                 }
                 break;
