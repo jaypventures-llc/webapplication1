@@ -65,7 +65,7 @@ $bannedTermsFound = @()
 $excludeFilter = {
   $path = $_.FullName
   foreach ($excludeFolder in $ExcludeFolders) {
-    if ($path -match "([\/\\]|^)$excludeFolder([\/\\]|$)") {
+    if ($path -match "([\/\\]|^)$([regex]::Escape($excludeFolder))([\/\\]|$)") {
       return $false
     }
   }
@@ -81,7 +81,7 @@ foreach ($ext in $FileExtensions) {
     
     foreach ($term in $BannedTerms) {
       # Case-insensitive search for whole word matches
-      if ($content -match "\b$([regex]::Escape($term))\b") {
+      if ($content -imatch "\b$([regex]::Escape($term))\b") {
         $filesWithBannedTerms += $file.FullName
         $bannedTermsFound += @{
           File = $file.FullName
