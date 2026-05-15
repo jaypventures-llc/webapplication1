@@ -1,10 +1,12 @@
 $ErrorActionPreference = "Stop"
 
 # Banned terms for public-facing content
-# These terms are prohibited to maintain inclusive language standards and brand consistency:
+# These terms are prohibited to maintain inclusive language standards and brand consistency in user-facing materials:
 # - "division" implies departmental silos; use "team" or "group" instead
 # - "master" has problematic historical connotations; use "primary", "main", or "primary copy" instead
+#   (Note: This may flag technical terms in documentation like "version control". Review matches contextually.)
 # - "control" focuses on dominance; use "manage", "govern", or "administer" instead
+#   (Note: Technical terms like "access control" should use "permission" or "authorization" in UI text.)
 $BannedTerms = @(
   "division",
   "master",
@@ -32,8 +34,7 @@ if ($slnFiles.Count -eq 0) {
 $slnPath = $slnFiles[0].FullName
 $slnName = $slnFiles[0].Name
 
-$csprojFiles = @()
-$csprojFiles = Get-ChildItem -Path "src" -Recurse -Filter "*.csproj" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "src[\/\\][^\/\\]+[\/\\]" } | Select-Object -First 1
+$csprojFiles = @(Get-ChildItem -Path "src" -Recurse -Filter "*.csproj" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "src[\/\\][^\/\\]+[\/\\]" })
 
 if ($csprojFiles.Count -eq 0) {
   Write-Host "FAIL: No .csproj file found" -ForegroundColor Red
