@@ -40,7 +40,7 @@ All partner assets are stored in: `src/JPVOS/wwwroot/assets/partners/`
 | PowerShell | powershell.svg | Fallback | Microsoft | TM | Stylized terminal icon; Microsoft brand pending | Approved Internal |
 | Spotify | spotify.svg | Fallback | Spotify | TM | Stylized sound wave icon using Spotify green; Spotify brand kit pending | Approved Internal |
 | Stripe | stripe.svg | Fallback | Stripe | TM | Stylized S lettermark using Stripe purple; Stripe brand guidelines pending | Approved Internal |
-| University of Phoenix | university-phoenix.svg | Fallback | University of Phoenix | TM | Stylized phoenix flame icon; official mark requires educational partner approval | Approved Internal |
+| University of Phoenix | university-phoenix.svg | Fallback | University of Phoenix | TM | Stylized phoenix flame icon (filename abbreviated to university-phoenix for URL consistency); official mark requires educational partner approval | Approved Internal |
 | Unreal Editor | unreal-editor.svg | Fallback | Epic Games | TM | Stylized U lettermark; Epic Games brand guidelines pending | Approved Internal |
 | Verizon | verizon.svg | Fallback | Verizon | TM | Stylized checkmark using Verizon red; Verizon brand kit pending | Approved Internal |
 | Visual Studio Code | visual-studio-code.svg | Fallback | Microsoft | TM | Stylized code brackets icon; alternate to vscode.svg | Approved Internal |
