@@ -39,11 +39,16 @@ This repo must preserve:
 
 ### Container Deployment (Current)
 
-The application is containerized and published to GitHub Container Registry on every push to `main`:
+The application is containerized and published to GitHub Container Registry when changes to `src/JPVOS/**` are pushed to `main`:
 
 ```bash
-docker pull ghcr.io/jaypventures-llc/jpvos:latest
-docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpvos:latest
+# For local testing
+docker pull ghcr.io/jaypventures-llc/jpv-os:latest
+docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpv-os:latest
+
+# For production (use immutable commit SHA tag)
+docker pull ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
+docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
 ```
 
 **Supported Platforms:**

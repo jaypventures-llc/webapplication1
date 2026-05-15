@@ -1,30 +1,37 @@
 # Container Deployment Guide
 
-This guide provides instructions for deploying JPVOS using container platforms as an alternative to Azure App Service.
+This guide provides instructions for deploying JPV-OS using container platforms as an alternative to Azure App Service.
 
 ## Container Image
 
-The container image is automatically built and pushed to GitHub Container Registry (ghcr.io) on every push to the `main` branch.
+The container image is automatically built and pushed to GitHub Container Registry (ghcr.io) when changes are pushed to the `main` branch in `src/JPVOS/**` or the workflow file. Pull requests also build the image (without pushing) to validate changes.
 
 ### Image Location
 
 ```
-ghcr.io/jaypventures-llc/jpvos:latest
+ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
 ```
 
 ### Available Tags
 
-- `latest` - Most recent build from main branch
-- `<sha>` - Git commit SHA for specific versions
+- `<sha>` - Git commit SHA for specific versions (recommended for production)
+- `latest` - Most recent build from main branch (for local testing only)
 - `YYYYMMDD-HHmmss` - Timestamp-based tags
+
+> **Production Recommendation**: Always use the immutable commit SHA tag for production deployments to ensure auditability and reliable rollbacks.
 
 ## Quick Start
 
 ### Pull and Run Locally
 
 ```bash
-docker pull ghcr.io/jaypventures-llc/jpvos:latest
-docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpvos:latest
+# For local testing, latest is acceptable
+docker pull ghcr.io/jaypventures-llc/jpv-os:latest
+docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpv-os:latest
+
+# For production, use a specific commit SHA
+docker pull ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
+docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
 ```
 
 Visit http://localhost:8080 to access the application.
@@ -35,7 +42,7 @@ Visit http://localhost:8080 to access the application.
 
 1. Create a new **Web Service** on [Render](https://render.com)
 2. Select **Deploy an existing image from a registry**
-3. Enter the image URL: `ghcr.io/jaypventures-llc/jpvos:latest`
+3. Enter the image URL: `ghcr.io/jaypventures-llc/jpv-os:<commit-sha>`
 4. Configure environment variables if needed
 5. Deploy
 
@@ -43,17 +50,20 @@ Visit http://localhost:8080 to access the application.
 - `ASPNETCORE_ENVIRONMENT`: `Production`
 - `PORT`: Render will set this automatically
 
+> **Note**: The included `render.yaml` uses the free tier for evaluation. For production, change `plan: free` to `plan: starter` or higher.
+
 ### Railway
 
 1. Create a new project on [Railway](https://railway.app)
 2. Add a new service and select **Docker Image**
-3. Enter: `ghcr.io/jaypventures-llc/jpvos:latest`
+3. Enter: `ghcr.io/jaypventures-llc/jpv-os:<commit-sha>`
 4. Railway will automatically detect the exposed port
 5. Generate a domain or connect your custom domain
 
 **Alternative - GitHub Integration:**
 1. Connect your GitHub repository to Railway
-2. Railway will automatically detect the Dockerfile and build
+2. Set the **Root Directory** to `src/JPVOS` so Railway finds the Dockerfile
+3. Railway will build and deploy automatically
 
 ### Fly.io
 
@@ -67,21 +77,24 @@ fly launch --no-deploy
 fly deploy
 ```
 
+> **Note**: The included `fly.toml` sets `min_machines_running = 0` for cost savings. For production, edit `fly.toml` and set `min_machines_running = 1` to avoid cold starts.
+
 **Option B**: Deploy using the pre-built GHCR image. Create a `fly.toml`:
 
 ```toml
-app = "jpvos"
+app = "jpv-os"
 primary_region = "iad"
 
 [build]
-  image = "ghcr.io/jaypventures-llc/jpvos:latest"
+  image = "ghcr.io/jaypventures-llc/jpv-os:<commit-sha>"
 
 [http_service]
   internal_port = 8080
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 0
+  # Set to 1 for production
+  min_machines_running = 1
 
 [[http_service.checks]]
   grace_period = "10s"
@@ -103,20 +116,20 @@ fly deploy
 
 1. Go to [DigitalOcean App Platform](https://cloud.digitalocean.com/apps)
 2. Create new app → Select **Container Registry**
-3. Enter: `ghcr.io/jaypventures-llc/jpvos`
+3. Enter: `ghcr.io/jaypventures-llc/jpv-os:<commit-sha>`
 4. Configure resources and deploy
 
 ### Google Cloud Run
 
 ```bash
-# Pull from GHCR and push to Google Container Registry
-docker pull ghcr.io/jaypventures-llc/jpvos:latest
-docker tag ghcr.io/jaypventures-llc/jpvos:latest gcr.io/YOUR_PROJECT/jpvos:latest
-docker push gcr.io/YOUR_PROJECT/jpvos:latest
+# Pull from GHCR and push to Artifact Registry (recommended over deprecated gcr.io)
+docker pull ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
+docker tag ghcr.io/jaypventures-llc/jpv-os:<commit-sha> REGION-docker.pkg.dev/YOUR_PROJECT/YOUR_REPO/jpv-os:<commit-sha>
+docker push REGION-docker.pkg.dev/YOUR_PROJECT/YOUR_REPO/jpv-os:<commit-sha>
 
 # Deploy to Cloud Run
-gcloud run deploy jpvos \
-  --image gcr.io/YOUR_PROJECT/jpvos:latest \
+gcloud run deploy jpv-os \
+  --image REGION-docker.pkg.dev/YOUR_PROJECT/YOUR_REPO/jpv-os:<commit-sha> \
   --platform managed \
   --port 8080 \
   --allow-unauthenticated
@@ -133,8 +146,7 @@ gcloud run deploy jpvos \
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ASPNETCORE_ENVIRONMENT` | `Production` | Runtime environment |
-| `ASPNETCORE_URLS` | `http://+:8080` | Listening URL (set in Dockerfile) |
-| `PORT` | - | Some platforms set this; the app uses 8080 by default |
+| `PORT` | `8080` | Listening port (honored by Dockerfile) |
 
 ## Health Check
 
@@ -157,8 +169,8 @@ If you need to build the container image locally:
 
 ```bash
 cd src/JPVOS
-docker build -t jpvos:local .
-docker run -p 8080:8080 jpvos:local
+docker build -t jpv-os:local .
+docker run -p 8080:8080 jpv-os:local
 ```
 
 ## Manual Deployment from Release Artifact
