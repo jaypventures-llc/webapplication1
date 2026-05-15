@@ -1,24 +1,24 @@
-<section class="partner-category-system">
-    <div>
-        <p class="section-kicker">@Label</p>
-        <h3>@Title</h3>
+<section class="partner-category">
+    <div class="partner-info">
+        <span class="partner-label">@Label</span>
+        <h2>@Title</h2>
         <p>@Description</p>
     </div>
-    <div class="partner-logo-grid">
+
+    <div class="partner-grid">
         @foreach (var partner in Partners)
         {
-            <article class="partner-logo-card">
+            <div class="partner-tile">
                 @if (!string.IsNullOrWhiteSpace(partner.Icon))
                 {
                     <img src="@partner.Icon" alt="@partner.Name" />
                 }
                 else
                 {
-                    <span>@partner.Initials</span>
+                    <span class="partner-tile-mark" aria-hidden="true">@partner.Initials</span>
                 }
-                <strong>@partner.Name</strong>
-                <small>@partner.Role</small>
-            </article>
+                <span>@partner.Name</span>
+            </div>
         }
     </div>
 </section>
