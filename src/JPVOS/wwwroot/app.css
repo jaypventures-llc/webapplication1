@@ -373,3 +373,179 @@ body{
     padding:4px;
 }
 
+
+/* =========================================
+   ENTERPRISE STACK REBUILD
+========================================= */
+
+.partner-grid{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-top:22px;
+}
+
+.partner-card{
+    display:grid;
+    grid-template-columns:56px 220px 1fr;
+    align-items:start;
+
+    gap:24px;
+
+    padding:22px 28px;
+
+    min-height:auto;
+
+    border-radius:18px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.028),
+            rgba(255,255,255,.018)
+        );
+
+    border:1px solid rgba(255,255,255,.05);
+
+    box-shadow:none;
+
+    transition:
+        border-color .25s ease,
+        background .25s ease,
+        transform .25s ease;
+}
+
+.partner-card:hover{
+    transform:translateY(-2px);
+
+    border-color:
+        rgba(0,212,255,.22);
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.04),
+            rgba(255,255,255,.022)
+        );
+}
+
+.partner-icon-wrap{
+    width:56px;
+    height:56px;
+
+    border-radius:14px;
+
+    background:
+        rgba(255,255,255,.025);
+
+    border:
+        1px solid rgba(255,255,255,.06);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.partner-icon{
+    width:28px;
+    height:28px;
+
+    object-fit:contain;
+
+    filter:
+        brightness(1.2)
+        grayscale(.1);
+}
+
+.partner-card h3{
+    margin:0;
+
+    font-size:20px;
+    line-height:1.05;
+
+    font-weight:700;
+
+    letter-spacing:-.03em;
+}
+
+.partner-card p{
+    margin:0;
+
+    max-width:none;
+
+    font-size:15px;
+
+    line-height:1.7;
+
+    color:#AEB7CC;
+}
+
+.partner-category{
+    margin-top:58px;
+}
+
+.partner-category-title{
+    margin-bottom:18px;
+
+    font-size:11px;
+
+    letter-spacing:.42em;
+
+    color:#00D4FF;
+
+    opacity:.92;
+}
+
+.partners-hero .jpv-title{
+    font-size:
+        clamp(52px,6vw,104px);
+
+    max-width:1100px;
+
+    line-height:.9;
+}
+
+.partners-hero .jpv-lede{
+    font-size:22px;
+
+    max-width:1200px;
+
+    color:#AEB7CC;
+
+    line-height:1.8;
+}
+
+/* Remove giant spacing */
+
+.partner-grid + .partner-grid{
+    margin-top:0;
+}
+
+/* Better responsive structure */
+
+@media(max-width:1200px){
+
+    .partner-card{
+        grid-template-columns:56px 1fr;
+    }
+
+    .partner-card p{
+        grid-column:2;
+    }
+}
+
+@media(max-width:760px){
+
+    .partner-card{
+        grid-template-columns:1fr;
+    }
+
+    .partner-card p{
+        grid-column:auto;
+    }
+
+    .partner-icon-wrap{
+        margin-bottom:8px;
+    }
+}
+
