@@ -1,8 +1,19 @@
 using JPVOS.Models;
 
-public class EntitlementService
+/// <summary>
+/// DEVELOPMENT-ONLY: In-memory entitlement store. Replace with persistent storage for production.
+/// </summary>
+public interface IEntitlementService
 {
-    private readonly List<Entitlement> _entitlements = new(); // Replace with persistent store
+    Entitlement? GetByStripeCustomerId(string customerId);
+    void AddOrUpdate(Entitlement ent);
+    void RemoveByStripeCustomerId(string customerId);
+}
+
+public class EntitlementService : IEntitlementService
+{
+    // DEVELOPMENT-ONLY: This is not safe for production. Use a persistent store for real deployments.
+    private readonly List<Entitlement> _entitlements = new();
 
     public Entitlement? GetByStripeCustomerId(string customerId) =>
         _entitlements.FirstOrDefault(e => e.StripeCustomerId == customerId);

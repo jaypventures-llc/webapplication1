@@ -12,7 +12,7 @@ Stripe.StripeConfiguration.ApiKey = builder.Configuration["STRIPE_SECRET_KEY"];
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
-builder.Services.AddSingleton<EntitlementService>();
+builder.Services.AddSingleton<IEntitlementService, EntitlementService>();
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<DiscordService>();
 

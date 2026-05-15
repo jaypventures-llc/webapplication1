@@ -10,9 +10,9 @@ public class DiscordOAuthController : ControllerBase
 {
     private readonly IConfiguration _config;
     private readonly IHttpClientFactory _httpFactory;
-    private readonly EntitlementService _entitlementService;
+    private readonly IEntitlementService _entitlementService;
     private readonly DiscordService _discordService;
-    public DiscordOAuthController(IConfiguration config, IHttpClientFactory httpFactory, EntitlementService entitlementService, DiscordService discordService)
+    public DiscordOAuthController(IConfiguration config, IHttpClientFactory httpFactory, IEntitlementService entitlementService, DiscordService discordService)
     {
         _config = config;
         _httpFactory = httpFactory;

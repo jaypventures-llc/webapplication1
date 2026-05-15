@@ -10,9 +10,9 @@ using System.Text.Json;
 public class StripeWebhookController : ControllerBase
 {
     private readonly IConfiguration _config;
-    private readonly EntitlementService _entitlementService;
+    private readonly IEntitlementService _entitlementService;
     private readonly DiscordService _discordService;
-    public StripeWebhookController(IConfiguration config, EntitlementService entitlementService, DiscordService discordService)
+    public StripeWebhookController(IConfiguration config, IEntitlementService entitlementService, DiscordService discordService)
     {
         _config = config;
         _entitlementService = entitlementService;
