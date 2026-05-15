@@ -296,62 +296,6 @@ p {
     object-fit: cover;
 }
 
-/*
-    Retained only for legacy pages that may still reference old classes.
-    Active heroes use image-panel with approved assets.
-*/
-.legacy-hero-visual {
-    position: relative;
-    min-height: 520px;
-    border: 1px solid rgba(213, 227, 248, .10);
-    border-radius: 18px;
-    background:
-        radial-gradient(circle at center, rgba(0, 212, 255, .12), transparent 24%),
-        linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
-}
-
-.legacy-interface-ring {
-    position: absolute;
-    inset: 11%;
-    border: 1px solid rgba(0, 212, 255, .22);
-    border-radius: 50%;
-    box-shadow: 0 0 44px rgba(0, 212, 255, .12);
-}
-
-.legacy-interface-ring::before,
-.legacy-interface-ring::after {
-    content: "";
-    position: absolute;
-    inset: 14%;
-    border: 1px solid rgba(255, 255, 255, .08);
-    border-radius: 50%;
-}
-
-.legacy-interface-ring::after {
-    inset: 28%;
-    border-color: rgba(255, 45, 138, .20);
-}
-
-.legacy-interface-panel {
-    position: absolute;
-    inset: auto 36px 36px 36px;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 10px;
-}
-
-.legacy-interface-panel span {
-    border: 1px solid rgba(213, 227, 248, .12);
-    border-radius: var(--init-radius);
-    padding: 14px 10px;
-    background: rgba(4, 6, 11, .64);
-    color: rgba(244, 247, 251, .76);
-    font-size: 11px;
-    font-weight: 900;
-    text-align: center;
-    text-transform: uppercase;
-}
-
 .content-section,
 .cta-section {
     padding: clamp(26px, 4vw, 58px);
