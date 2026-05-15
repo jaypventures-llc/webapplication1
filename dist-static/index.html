@@ -3,830 +3,781 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-
 <title>JPV-OS / init Access Gateway</title>
-
 <link rel="icon" type="image/png" href="/favicon.png" />
 
 <style>
-
 :root{
-    --bg:#04070d;
-    --surface:rgba(255,255,255,.05);
-    --line:rgba(255,255,255,.08);
-    --text:#f5f7ff;
-    --muted:rgba(255,255,255,.66);
-    --cyan:#63e5ff;
-    --blue:#168cff;
-    --magenta:#ff4fd8;
+  --bg:#05070B;
+  --navy:#0A1020;
+  --text:#F5F7FA;
+  --muted:rgba(245,247,250,.68);
+  --line:rgba(255,255,255,.10);
+  --glass:rgba(255,255,255,.055);
+  --cyan:#00D4FF;
+  --purple:#7B30FF;
+  --magenta:#FF2D8A;
+  --chrome:#D7DCE5;
+  --gold:#F4D58A;
 }
 
-*{
-    box-sizing:border-box;
-}
+*{box-sizing:border-box}
 
 html{
-    scroll-behavior:smooth;
+  scroll-behavior:smooth;
+  background:var(--bg);
 }
 
 body{
-    margin:0;
-    overflow-x:hidden;
-    background:#04070d;
-    color:var(--text);
-    font-family:
-        Inter,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+  margin:0;
+  min-height:100%;
+  overflow-x:hidden;
+  color:var(--text);
+  font-family:Inter,"Segoe UI",-apple-system,BlinkMacSystemFont,Arial,sans-serif;
+  background:
+    radial-gradient(circle at 50% -10%,rgba(0,212,255,.18),transparent 28%),
+    radial-gradient(circle at 92% 18%,rgba(255,45,138,.10),transparent 24%),
+    radial-gradient(circle at 12% 82%,rgba(123,48,255,.14),transparent 28%),
+    linear-gradient(180deg,#05070B 0%,#08101d 48%,#05070B 100%);
 }
 
 body::before{
-    content:"";
-    position:fixed;
-    inset:0;
-
-    background:
-        radial-gradient(circle at 20% 20%, rgba(99,229,255,.08), transparent 26%),
-        radial-gradient(circle at 80% 10%, rgba(255,79,216,.08), transparent 30%),
-        radial-gradient(circle at 50% 100%, rgba(22,140,255,.10), transparent 34%);
-
-    pointer-events:none;
-    z-index:-2;
-    filter:blur(70px);
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.026) 1px,transparent 1px);
+  background-size:74px 74px;
+  mask-image:radial-gradient(circle at center,black,transparent 75%);
+  z-index:-2;
 }
 
 body::after{
-    content:"";
-    position:fixed;
-    inset:0;
-
-    background:
-        linear-gradient(rgba(0,0,0,.24), rgba(0,0,0,.78)),
-        url('/assets/jpv-os/jpv-os-hero.png') center/cover no-repeat;
-
-    opacity:.42;
-
-    pointer-events:none;
-    z-index:-1;
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 15%,rgba(255,255,255,.075),transparent 18%),
+    linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.70));
+  z-index:-1;
 }
+
+a{color:inherit}
 
 .shell{
-    width:min(1500px,100%);
-    margin:0 auto;
-    padding:32px clamp(22px,4vw,70px) 120px;
+  width:min(1540px,100%);
+  margin:0 auto;
+  padding:30px clamp(22px,4.6vw,78px) 110px;
 }
 
-header{
-    position:sticky;
-    top:18px;
-
-    z-index:50;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:18px;
-
-    padding:14px 18px;
-
-    border-radius:22px;
-
-    background:rgba(7,10,18,.58);
-
-    border:1px solid rgba(255,255,255,.08);
-
-    backdrop-filter:blur(20px);
-
-    box-shadow:
-        0 12px 40px rgba(0,0,0,.28);
+.header{
+  position:sticky;
+  top:18px;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:22px;
+  padding:14px 18px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:rgba(5,7,11,.64);
+  backdrop-filter:blur(24px);
+  box-shadow:0 18px 70px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.06);
 }
 
 .brand{
-    display:flex;
-    align-items:center;
-    gap:14px;
-
-    text-decoration:none;
-    color:white;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  text-decoration:none;
+  font-weight:900;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  font-size:.84rem;
 }
 
-.brand img{
-    width:38px;
+.brand-mark{
+  width:34px;
+  height:30px;
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+  background:linear-gradient(135deg,var(--cyan),var(--purple),var(--magenta));
+  filter:drop-shadow(0 0 18px rgba(0,212,255,.72));
 }
 
-.brand strong{
-    font-size:.86rem;
-    letter-spacing:.22em;
-    text-transform:uppercase;
+.nav{
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
 
-nav{
-    display:flex;
-    gap:10px;
+.nav a{
+  padding:10px 14px;
+  border-radius:999px;
+  color:rgba(255,255,255,.72);
+  text-decoration:none;
+  font-size:.78rem;
+  font-weight:800;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  transition:.24s ease;
 }
 
-nav a{
-    position:relative;
-
-    padding:10px 16px;
-
-    border-radius:999px;
-
-    color:rgba(255,255,255,.74);
-
-    text-decoration:none;
-
-    font-size:.82rem;
-    font-weight:700;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-
-    transition:
-        background .25s ease,
-        color .25s ease;
-}
-
-nav a:hover{
-    color:white;
-    background:rgba(255,255,255,.06);
+.nav a:hover{
+  color:white;
+  background:rgba(255,255,255,.065);
 }
 
 .hero{
-    min-height:92vh;
-
-    display:grid;
-    align-items:center;
-
-    padding-top:80px;
+  min-height:calc(100vh - 90px);
+  display:grid;
+  grid-template-columns:minmax(0,1.04fr) minmax(380px,.96fr);
+  gap:60px;
+  align-items:center;
+  padding:90px 0 70px;
 }
 
-.hero-grid{
-    display:grid;
-    grid-template-columns:1.2fr .95fr;
-    gap:60px;
-    align-items:center;
-}
-
-.eyebrow{
-    margin:0 0 18px;
-
-    color:var(--cyan);
-
-    font-size:.78rem;
-    font-weight:800;
-
-    letter-spacing:.28em;
-    text-transform:uppercase;
+.kicker{
+  margin:0 0 18px;
+  color:var(--gold);
+  font-size:.76rem;
+  font-weight:900;
+  letter-spacing:.26em;
+  text-transform:uppercase;
 }
 
 .hero h1{
-    margin:0;
-
-    font-size:clamp(4.8rem,9vw,8.5rem);
-
-    line-height:.88;
-    letter-spacing:-.08em;
-
-    text-wrap:balance;
+  margin:0;
+  max-width:860px;
+  font-size:clamp(4.4rem,8.4vw,9.6rem);
+  line-height:.86;
+  letter-spacing:-.09em;
+  font-weight:950;
+  background:linear-gradient(90deg,#fff 0%,#dce6f7 44%,#91eaff 72%,#ffffff 100%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  text-wrap:balance;
 }
 
-.hero p{
-    max-width:760px;
-
-    margin:28px 0 0;
-
-    color:var(--muted);
-
-    font-size:1.14rem;
-    line-height:1.75;
+.hero-copy{
+  max-width:760px;
+  margin:30px 0 0;
+  color:var(--muted);
+  font-size:clamp(1.08rem,1.45vw,1.34rem);
+  line-height:1.7;
 }
 
-.actions{
-    display:flex;
-    gap:14px;
-    flex-wrap:wrap;
-
-    margin-top:36px;
+.hero-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  margin-top:34px;
 }
 
-.actions a{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-
-    min-height:50px;
-
-    padding:0 24px;
-
-    border-radius:999px;
-
-    text-decoration:none;
-
-    font-weight:800;
-
-    transition:
-        transform .28s ease,
-        box-shadow .28s ease;
+.button{
+  min-height:50px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 22px;
+  border-radius:999px;
+  text-decoration:none;
+  font-weight:900;
+  letter-spacing:.02em;
+  transition:transform .25s ease,box-shadow .25s ease,background .25s ease;
 }
 
-.actions a:hover{
-    transform:translateY(-3px);
+.button:hover{
+  transform:translateY(-3px);
 }
 
-.primary{
-    color:#04070d;
-
-    background:
-        linear-gradient(
-            135deg,
-            var(--cyan),
-            var(--blue),
-            var(--magenta)
-        );
-
-    box-shadow:
-        0 14px 40px rgba(22,140,255,.28);
+.button.primary{
+  color:#02040a;
+  background:linear-gradient(135deg,var(--cyan),#168cff,var(--magenta));
+  box-shadow:0 20px 60px rgba(0,212,255,.18);
 }
 
-.secondary{
-    color:white;
-
-    background:rgba(255,255,255,.06);
-
-    border:1px solid rgba(255,255,255,.12);
+.button.secondary{
+  color:white;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.055);
+  backdrop-filter:blur(18px);
 }
 
 .hero-visual{
-    position:relative;
+  position:relative;
 }
 
-.hero-visual img{
-    width:100%;
+.stage-card{
+  position:relative;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:36px;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.028));
+  box-shadow:0 38px 130px rgba(0,0,0,.52),0 0 90px rgba(0,212,255,.10);
+}
 
-    border-radius:30px;
+.stage-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(0,212,255,.16),transparent 28%,rgba(255,45,138,.10));
+  pointer-events:none;
+  z-index:2;
+}
 
-    border:1px solid rgba(255,255,255,.12);
+.stage-card img{
+  width:100%;
+  display:block;
+  aspect-ratio:1.12/1;
+  object-fit:cover;
+}
 
-    box-shadow:
-        0 30px 120px rgba(0,0,0,.55),
-        0 0 80px rgba(99,229,255,.10);
+.status-pill{
+  width:fit-content;
+  margin-top:22px;
+  padding:10px 16px;
+  border:1px solid rgba(0,212,255,.18);
+  border-radius:999px;
+  background:rgba(255,255,255,.045);
+  color:rgba(255,255,255,.78);
+  font-size:.78rem;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+
+.status-dot{
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-right:10px;
+  border-radius:50%;
+  background:#4dff88;
+  box-shadow:0 0 16px #4dff88;
 }
 
 .section{
-    margin-top:140px;
+  padding:110px 0 0;
+  scroll-margin-top:120px;
 }
 
-.section-header{
-    margin-bottom:44px;
+.section-head{
+  max-width:980px;
+  margin-bottom:42px;
 }
 
-.section-header span{
-    display:block;
-
-    margin-bottom:12px;
-
-    color:var(--cyan);
-
-    font-size:.78rem;
-    font-weight:800;
-
-    letter-spacing:.24em;
-    text-transform:uppercase;
+.section-head span{
+  display:block;
+  margin-bottom:12px;
+  color:var(--cyan);
+  font-size:.76rem;
+  font-weight:900;
+  letter-spacing:.24em;
+  text-transform:uppercase;
 }
 
-.section-header h2{
-    margin:0;
-
-    font-size:clamp(2.6rem,5vw,5rem);
-
-    line-height:.92;
-    letter-spacing:-.05em;
+.section-head h2{
+  margin:0;
+  font-size:clamp(2.8rem,5vw,5.9rem);
+  line-height:.92;
+  letter-spacing:-.07em;
+  text-wrap:balance;
 }
 
-.centerpiece{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:50px;
-    align-items:center;
+.core-grid{
+  display:grid;
+  grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+  gap:34px;
+  align-items:stretch;
 }
 
-.centerpiece img{
-    width:100%;
-
-    border-radius:28px;
-
-    border:1px solid rgba(255,255,255,.1);
-
-    box-shadow:
-        0 28px 100px rgba(0,0,0,.45);
+.core-visual,.core-copy,.flow-item,.principle,.access-card,.layer{
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(255,255,255,.065),rgba(255,255,255,.03));
+  backdrop-filter:blur(22px);
+  box-shadow:0 28px 90px rgba(0,0,0,.31);
 }
 
-.centerpiece-copy p{
-    margin:22px 0 0;
+.core-visual{
+  border-radius:34px;
+  overflow:hidden;
+}
 
-    color:var(--muted);
+.core-visual img{
+  width:100%;
+  height:100%;
+  min-height:520px;
+  display:block;
+  object-fit:cover;
+}
 
-    line-height:1.8;
+.core-copy{
+  border-radius:34px;
+  padding:clamp(30px,4vw,56px);
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.core-copy h3{
+  margin:0;
+  font-size:clamp(2rem,3.3vw,4rem);
+  line-height:.96;
+  letter-spacing:-.055em;
+}
+
+.core-copy p{
+  margin:24px 0 0;
+  color:var(--muted);
+  font-size:1.08rem;
+  line-height:1.75;
+}
+
+.stack{
+  display:grid;
+  gap:12px;
+  margin-top:28px;
+}
+
+.stack div{
+  padding:16px 18px;
+  border-radius:18px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.075);
+  color:rgba(255,255,255,.82);
+  font-weight:800;
 }
 
 .layers{
-    display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:24px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:22px;
 }
 
 .layer{
-    overflow:hidden;
-
-    border-radius:30px;
-
-    border:1px solid rgba(255,255,255,.08);
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,.06),
-            rgba(255,255,255,.03)
-        );
-
-    backdrop-filter:blur(20px);
-
-    transition:
-        transform .3s ease,
-        border-color .3s ease;
+  border-radius:32px;
+  overflow:hidden;
+  transition:transform .28s ease,border-color .28s ease;
 }
 
 .layer:hover{
-    transform:translateY(-8px);
-    border-color:rgba(99,229,255,.22);
+  transform:translateY(-8px);
+  border-color:rgba(0,212,255,.28);
 }
 
 .layer img{
-    width:100%;
-    height:260px;
-    object-fit:cover;
+  width:100%;
+  height:280px;
+  display:block;
+  object-fit:cover;
 }
 
-.layer-content{
-    padding:28px;
+.layer-body{
+  padding:28px;
 }
 
-.layer-content span{
-    color:var(--cyan);
-
-    font-size:.72rem;
-    font-weight:800;
-
-    letter-spacing:.2em;
-    text-transform:uppercase;
+.layer-body span{
+  color:var(--cyan);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.18em;
+  text-transform:uppercase;
 }
 
-.layer-content h3{
-    margin:14px 0 14px;
-
-    font-size:1.5rem;
+.layer-body h3{
+  margin:14px 0 12px;
+  font-size:1.52rem;
+  letter-spacing:-.035em;
 }
 
-.layer-content p{
-    margin:0;
-
-    color:var(--muted);
-
-    line-height:1.7;
+.layer-body p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.65;
 }
 
 .flow{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:18px;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:16px;
 }
 
 .flow-item{
-    padding:30px;
-
-    border-radius:26px;
-
-    border:1px solid rgba(255,255,255,.08);
-
-    background:rgba(255,255,255,.04);
-
-    text-align:center;
+  border-radius:28px;
+  padding:30px;
+  min-height:190px;
 }
 
-.flow-item h4{
-    margin:20px 0 12px;
+.flow-item span{
+  color:var(--cyan);
+  font-weight:950;
+  font-size:1.2rem;
+}
 
-    font-size:1.2rem;
-    letter-spacing:.08em;
+.flow-item h3{
+  margin:28px 0 12px;
+  font-size:1.3rem;
+  letter-spacing:.08em;
+  text-transform:uppercase;
 }
 
 .flow-item p{
-    margin:0;
-
-    color:var(--muted);
-    line-height:1.6;
+  margin:0;
+  color:var(--muted);
+  line-height:1.6;
 }
 
 .principles{
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:16px;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:14px;
 }
 
 .principle{
-    padding:24px;
-
-    border-radius:22px;
-
-    border:1px solid rgba(255,255,255,.08);
-
-    background:rgba(255,255,255,.04);
+  border-radius:24px;
+  padding:24px;
 }
 
-.principle h5{
-    margin:0 0 10px;
-
-    font-size:1rem;
-    letter-spacing:.04em;
+.principle h3{
+  margin:0 0 12px;
+  font-size:1.05rem;
 }
 
 .principle p{
-    margin:0;
-
-    color:var(--muted);
-
-    line-height:1.6;
+  margin:0;
+  color:var(--muted);
+  line-height:1.6;
+  font-size:.94rem;
 }
 
 .access{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:18px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
 }
 
-.access a{
-    display:block;
+.access-card{
+  display:block;
+  border-radius:28px;
+  padding:28px;
+  color:white;
+  text-decoration:none;
+  transition:transform .28s ease,border-color .28s ease;
+}
 
-    padding:26px;
+.access-card:hover{
+  transform:translateY(-7px);
+  border-color:rgba(0,212,255,.26);
+}
 
+.access-card span{
+  display:block;
+  margin-bottom:18px;
+  color:var(--cyan);
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+
+.access-card strong{
+  display:block;
+  font-size:1.25rem;
+  line-height:1.3;
+}
+
+.access-card p{
+  margin:14px 0 0;
+  color:var(--muted);
+  line-height:1.6;
+}
+
+.footer{
+  padding:110px 0 10px;
+  text-align:center;
+}
+
+.footer img{
+  width:min(420px,80vw);
+  opacity:.9;
+  filter:drop-shadow(0 0 30px rgba(0,212,255,.18));
+}
+
+.footer p{
+  margin:28px 0 0;
+  color:rgba(255,255,255,.58);
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  font-size:.78rem;
+  font-weight:900;
+}
+
+@media(max-width:1100px){
+  .hero,.core-grid,.layers,.flow,.principles,.access{
+    grid-template-columns:1fr;
+  }
+
+  .hero{
+    padding-top:60px;
+  }
+
+  .nav{
+    display:none;
+  }
+
+  .core-visual img{
+    min-height:360px;
+  }
+}
+
+@media(max-width:680px){
+  .shell{
+    padding-inline:18px;
+  }
+
+  .header{
+    top:10px;
+  }
+
+  .hero h1{
+    font-size:clamp(3.4rem,16vw,5rem);
+  }
+
+  .hero-copy{
+    font-size:1rem;
+  }
+
+  .button{
+    width:100%;
+  }
+
+  .stage-card{
     border-radius:26px;
+  }
 
-    border:1px solid rgba(255,255,255,.08);
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,.06),
-            rgba(255,255,255,.03)
-        );
-
-    color:white;
-    text-decoration:none;
-
-    transition:
-        transform .3s ease,
-        border-color .3s ease;
+  .layer img{
+    height:220px;
+  }
 }
-
-.access a:hover{
-    transform:translateY(-6px);
-    border-color:rgba(99,229,255,.24);
-}
-
-.access span{
-    display:block;
-
-    margin-bottom:12px;
-
-    color:var(--cyan);
-
-    font-size:.72rem;
-    font-weight:800;
-
-    letter-spacing:.18em;
-    text-transform:uppercase;
-}
-
-footer{
-    margin-top:120px;
-
-    text-align:center;
-
-    color:rgba(255,255,255,.42);
-
-    font-size:.78rem;
-
-    letter-spacing:.22em;
-    text-transform:uppercase;
-}
-
-@media (max-width:1100px){
-
-    .hero-grid,
-    .centerpiece,
-    .layers,
-    .flow,
-    .principles,
-    .access{
-        grid-template-columns:1fr;
-    }
-
-    .hero{
-        min-height:auto;
-        padding-top:60px;
-    }
-
-    nav{
-        display:none;
-    }
-}
-
 </style>
 </head>
 
 <body>
-
 <div class="shell">
 
-<header>
+<header class="header">
+  <a class="brand" href="#hero">
+    <span class="brand-mark"></span>
+    <span>JPV-OS</span>
+  </a>
 
-<a class="brand" href="#hero">
-    <img src="/assets/init/init-hero.png" alt="JPV-OS">
-    <strong>JPV-OS</strong>
-</a>
-
-<nav>
+  <nav class="nav" aria-label="Primary navigation">
     <a href="#hero">Gateway</a>
     <a href="#jpv-os">Infrastructure</a>
     <a href="#ecosystem">Ecosystem</a>
+    <a href="#flow">Operate</a>
     <a href="#access">Access</a>
-</nav>
-
+  </nav>
 </header>
 
+<main>
+
 <section class="hero" id="hero">
+  <div>
+    <p class="kicker">JPV-OS / init Access Gateway</p>
+    <h1>Welcome to the Venture.</h1>
+    <p class="hero-copy">
+      A cinematic enterprise access gateway for JayPVentures LLC, aligning governance,
+      infrastructure, intelligence, venture systems, research validation, and public access.
+    </p>
 
-<div class="hero-grid">
+    <div class="hero-actions">
+      <a class="button primary" href="#ecosystem">Enter Ecosystem</a>
+      <a class="button secondary" href="#jpv-os">View Infrastructure</a>
+    </div>
 
-<div>
+    <div class="status-pill">
+      <span class="status-dot"></span>Gateway Operational · Cloudflare Edge Active
+    </div>
+  </div>
 
-<p class="eyebrow">
-JPV-OS / INIT ACCESS GATEWAY
-</p>
-
-<h1>
-Welcome to the Venture.
-</h1>
-
-<p>
-Enterprise infrastructure, governance alignment,
-venture systems, research validation,
-and operational intelligence unified through one ecosystem.
-</p>
-
-<div class="actions">
-
-<a class="primary" href="#ecosystem">
-Enter Ecosystem
-</a>
-
-<a class="secondary" href="#access">
-View Infrastructure
-</a>
-
-</div>
-
-</div>
-
-<div class="hero-visual">
-    <img
-        src="/assets/reference/allbrands-logos.png"
-        alt="JPV ecosystem">
-</div>
-
-</div>
-
+  <div class="hero-visual">
+    <div class="stage-card">
+      <img src="/assets/reference/allbrands-logos.png" alt="JPV ecosystem brand system">
+    </div>
+  </div>
 </section>
 
 <section class="section" id="jpv-os">
+  <div class="section-head">
+    <span>Core Operating Standard</span>
+    <h2>Identity. Infrastructure. Intelligence.</h2>
+  </div>
 
-<div class="section-header">
-    <span>Core Infrastructure</span>
-    <h2>JPV-OS</h2>
-</div>
+  <div class="core-grid">
+    <div class="core-visual">
+      <img src="/assets/jpv-os/jpv-structureimage.png" alt="JPV-OS infrastructure structure">
+    </div>
 
-<div class="centerpiece">
+    <div class="core-copy">
+      <p class="kicker">JPV-OS</p>
+      <h3>One gateway for operational alignment.</h3>
+      <p>
+        JPV-OS provides the structured foundation for routing access, coordinating infrastructure,
+        preserving governance integrity, and scaling systems across the enterprise ecosystem.
+      </p>
 
-<img
-    src="/assets/jpv-os/jpv-structureimage.png"
-    alt="JPV-OS structure">
-
-<div class="centerpiece-copy">
-
-<p class="eyebrow">
-Identity • Infrastructure • Intelligence
-</p>
-
-<p>
-JPV-OS aligns enterprise infrastructure,
-operational routing, governance systems,
-research validation, and public access into one scalable operating environment.
-</p>
-
-</div>
-
-</div>
-
+      <div class="stack">
+        <div>Identity Network</div>
+        <div>Infrastructure Layer</div>
+        <div>Intelligence Layer</div>
+        <div>System Integrity</div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section class="section" id="ecosystem">
-
-<div class="section-header">
+  <div class="section-head">
     <span>Ecosystem Layers</span>
-    <h2>Operational Architecture</h2>
-</div>
+    <h2>Separated functions. One operating standard.</h2>
+  </div>
 
-<div class="layers">
+  <div class="layers">
+    <article class="layer">
+      <img src="/assets/jaypventures-llc/jaypventures-llc-hero.png" alt="JayPVentures LLC enterprise infrastructure">
+      <div class="layer-body">
+        <span>Enterprise</span>
+        <h3>JayPVentures LLC</h3>
+        <p>Enterprise infrastructure, operational architecture, strategic alignment, and governance integrity.</p>
+      </div>
+    </article>
 
-<article class="layer">
+    <article class="layer">
+      <img src="/assets/jaypVLabs/jpv-institute-hero.png" alt="JPV Institute and jaypVLabs research environment">
+      <div class="layer-body">
+        <span>Research</span>
+        <h3>JPV Institute / jaypVLabs</h3>
+        <p>Research validation, prototype review, systems doctrine, and controlled innovation before scale.</p>
+      </div>
+    </article>
 
-<img
-    src="/assets/jaypventures-llc/jaypventures-llc-hero.png"
-    alt="JayPVentures LLC">
-
-<div class="layer-content">
-
-<span>Enterprise</span>
-
-<h3>JayPVentures LLC</h3>
-
-<p>
-Enterprise infrastructure,
-governance alignment,
-operational systems,
-and long-term architectural oversight.
-</p>
-
-</div>
-
-</article>
-
-<article class="layer">
-
-<img
-    src="/assets/jaypVLabs/jpv-institute-hero.png"
-    alt="JPV Institute">
-
-<div class="layer-content">
-
-<span>Research</span>
-
-<h3>JPV Institute / jaypVLabs</h3>
-
-<p>
-Research validation,
-controlled experimentation,
-AI behavior review,
-and infrastructure doctrine.
-</p>
-
-</div>
-
-</article>
-
-<article class="layer">
-
-<img
-    src="/assets/jaypventures/jaypventures-hero.png"
-    alt="jaypventures">
-
-<div class="layer-content">
-
-<span>Creator Ecosystem</span>
-
-<h3>jaypventures</h3>
-
-<p>
-Venture launches,
-creator infrastructure,
-ecosystem experiences,
-and public-facing operational scale.
-</p>
-
-</div>
-
-</article>
-
-</div>
-
+    <article class="layer">
+      <img src="/assets/jaypventures/jaypventures-hero.png" alt="jaypventures creator ecosystem">
+      <div class="layer-body">
+        <span>Creator Ecosystem</span>
+        <h3>jaypventures</h3>
+        <p>Venture launches, creator systems, public engagement, and market-facing ecosystem experiences.</p>
+      </div>
+    </article>
+  </div>
 </section>
 
-<section class="section">
-
-<div class="section-header">
+<section class="section" id="flow">
+  <div class="section-head">
     <span>Operational Flow</span>
     <h2>Govern → Validate → Operate → Scale</h2>
-</div>
+  </div>
 
-<div class="flow">
+  <div class="flow">
+    <article class="flow-item">
+      <span>01</span>
+      <h3>Govern</h3>
+      <p>Set standards, boundaries, and integrity requirements before execution.</p>
+    </article>
 
-<div class="flow-item">
-    <h4>Govern</h4>
-    <p>Establish integrity and operational direction.</p>
-</div>
+    <article class="flow-item">
+      <span>02</span>
+      <h3>Validate</h3>
+      <p>Review systems through research, testing, and controlled implementation paths.</p>
+    </article>
 
-<div class="flow-item">
-    <h4>Validate</h4>
-    <p>Research, review, and controlled testing.</p>
-</div>
+    <article class="flow-item">
+      <span>03</span>
+      <h3>Operate</h3>
+      <p>Deploy infrastructure and experiences through structured operational routing.</p>
+    </article>
 
-<div class="flow-item">
-    <h4>Operate</h4>
-    <p>Deploy systems through structured infrastructure.</p>
-</div>
-
-<div class="flow-item">
-    <h4>Scale</h4>
-    <p>Expand responsibly through aligned architecture.</p>
-</div>
-
-</div>
-
+    <article class="flow-item">
+      <span>04</span>
+      <h3>Scale</h3>
+      <p>Expand only through aligned architecture, review, and operational consistency.</p>
+    </article>
+  </div>
 </section>
 
-<section class="section">
-
-<div class="section-header">
+<section class="section" id="principles">
+  <div class="section-head">
     <span>Principles</span>
-    <h2>Operational Standards</h2>
-</div>
+    <h2>Built for disciplined scale.</h2>
+  </div>
 
-<div class="principles">
+  <div class="principles">
+    <article class="principle">
+      <h3>Human-Guided</h3>
+      <p>Human judgment remains foundational.</p>
+    </article>
 
-<div class="principle">
-    <h5>Human-Guided</h5>
-    <p>Human judgment remains foundational.</p>
-</div>
+    <article class="principle">
+      <h3>Zero Trust</h3>
+      <p>Integrity applies across every operational layer.</p>
+    </article>
 
-<div class="principle">
-    <h5>Zero Trust</h5>
-    <p>Infrastructure integrity by default.</p>
-</div>
+    <article class="principle">
+      <h3>Consensus-Driven</h3>
+      <p>Systems mature through review and accountability.</p>
+    </article>
 
-<div class="principle">
-    <h5>Consensus-Driven</h5>
-    <p>Structured governance and review.</p>
-</div>
+    <article class="principle">
+      <h3>Scalable by Design</h3>
+      <p>Architecture must support long-term expansion.</p>
+    </article>
 
-<div class="principle">
-    <h5>Scalable by Design</h5>
-    <p>Built for long-term operational growth.</p>
-</div>
-
-<div class="principle">
-    <h5>Enterprise-Ready</h5>
-    <p>Architected for production environments.</p>
-</div>
-
-</div>
-
+    <article class="principle">
+      <h3>Enterprise-Ready</h3>
+      <p>Production readiness is the operating baseline.</p>
+    </article>
+  </div>
 </section>
 
 <section class="section" id="access">
-
-<div class="section-header">
+  <div class="section-head">
     <span>Access Routing</span>
-    <h2>Operational Contact Paths</h2>
-</div>
+    <h2>Route the right request to the right channel.</h2>
+  </div>
 
-<div class="access">
+  <div class="access">
+    <a class="access-card" href="mailto:venture@jaypventuresllc.com">
+      <span>Enterprise</span>
+      <strong>Partnerships and venture access</strong>
+      <p>Use this route for enterprise packages, strategic collaboration, and venture intake.</p>
+    </a>
 
-<a href="mailto:venture@jaypventuresllc.com">
-    <span>Enterprise</span>
-    Partnership and venture routing
-</a>
+    <a class="access-card" href="mailto:support@jaypventuresllc.com">
+      <span>Operations</span>
+      <strong>Support and operational questions</strong>
+      <p>Use this route for gateway support, routing issues, and operational coordination.</p>
+    </a>
 
-<a href="mailto:support@jaypventuresllc.com">
-    <span>Operations</span>
-    Infrastructure and operational support
-</a>
-
-<a href="mailto:security@jaypventuresllc.com">
-    <span>Security</span>
-    Security and governance escalation
-</a>
-
-</div>
-
+    <a class="access-card" href="mailto:security@jaypventuresllc.com">
+      <span>Security</span>
+      <strong>Security and governance escalation</strong>
+      <p>Use this route for security concerns, responsible disclosure, and infrastructure risk.</p>
+    </a>
+  </div>
 </section>
 
-<footer>
-ONE ECOSYSTEM · ONE OPERATING STANDARD
+<footer class="footer">
+  <img src="/assets/reference/allbrands-logos.png" alt="JPV ecosystem mark">
+  <p>One Ecosystem · One Operating Standard</p>
 </footer>
 
+</main>
 </div>
-
 </body>
 </html>
