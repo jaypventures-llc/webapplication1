@@ -30,6 +30,9 @@ builder.Services.AddSingleton<DiscordService>();
 var app = builder.Build();
 PeopleProtectionStartupGuard.Verify(app);
 
+// Add security headers early in the pipeline
+app.UseSecurityHeaders();
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -42,9 +45,6 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
-
-// Add security headers
-app.UseSecurityHeaders();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
@@ -98,10 +98,6 @@ static class SecurityHeadersExtensions
 
             // X-XSS-Protection: Legacy XSS protection header (defense in depth)
             context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-
-            // Strict-Transport-Security is already set via UseHsts() in production
-            // Additional security headers
-            context.Response.Headers.Add("X-Content-Security-Policy", "default-src 'self'");
 
             await next();
         });
