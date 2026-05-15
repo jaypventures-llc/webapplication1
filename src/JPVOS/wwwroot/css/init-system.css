@@ -177,6 +177,23 @@ a {
     margin-bottom: 18px;
 }
 
+.logo-img {
+    display: block;
+    width: min(420px, 100%);
+    height: auto;
+    object-fit: contain;
+}
+
+.hero-logo {
+    margin-bottom: 28px;
+}
+
+.hero-logo img {
+    width: min(360px, 100%);
+    height: auto;
+    display: block;
+}
+
 .section-kicker,
 .card-eyebrow,
 .route-tile span,
@@ -244,6 +261,32 @@ p {
 .hero-visual {
     position: relative;
     min-height: 520px;
+    margin: 0;
+}
+
+.image-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    border: 1px solid rgba(120, 150, 255, .22);
+    background: rgba(5, 7, 11, .72);
+    box-shadow: 0 0 60px rgba(0, 212, 255, .08);
+}
+
+.image-panel img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/*
+    Retained only for legacy pages that may still reference old classes.
+    Active heroes use image-panel with approved assets.
+*/
+.legacy-hero-visual {
+    position: relative;
+    min-height: 520px;
     border: 1px solid rgba(213, 227, 248, .10);
     border-radius: 18px;
     background:
@@ -251,7 +294,7 @@ p {
         linear-gradient(135deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
 }
 
-.interface-ring {
+.legacy-interface-ring {
     position: absolute;
     inset: 11%;
     border: 1px solid rgba(0, 212, 255, .22);
@@ -259,8 +302,8 @@ p {
     box-shadow: 0 0 44px rgba(0, 212, 255, .12);
 }
 
-.interface-ring::before,
-.interface-ring::after {
+.legacy-interface-ring::before,
+.legacy-interface-ring::after {
     content: "";
     position: absolute;
     inset: 14%;
@@ -268,12 +311,12 @@ p {
     border-radius: 50%;
 }
 
-.interface-ring::after {
+.legacy-interface-ring::after {
     inset: 28%;
     border-color: rgba(255, 45, 138, .20);
 }
 
-.interface-panel {
+.legacy-interface-panel {
     position: absolute;
     inset: auto 36px 36px 36px;
     display: grid;
@@ -281,7 +324,7 @@ p {
     gap: 10px;
 }
 
-.interface-panel span {
+.legacy-interface-panel span {
     border: 1px solid rgba(213, 227, 248, .12);
     border-radius: var(--init-radius);
     padding: 14px 10px;
@@ -659,7 +702,7 @@ p {
     .grid-4,
     .pricing-grid,
     .access-grid,
-    .interface-panel {
+    .legacy-interface-panel {
         grid-template-columns: 1fr;
     }
 

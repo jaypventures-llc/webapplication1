@@ -14,20 +14,16 @@
         </div>
     </div>
 
-    <div class="hero-visual" aria-hidden="true">
-        <div class="interface-ring"></div>
-        <div class="interface-panel">
-            <span>Access</span>
-            <span>Ventures</span>
-            <span>Partners</span>
-            <span>Pricing</span>
-        </div>
-    </div>
+    <figure class="hero-visual image-panel">
+        <img src="@Visual" alt="@VisualAlt" />
+    </figure>
 </section>
 
 @code {
     [Parameter] public string Logo { get; set; } = "/assets/init/init-hero.png";
     [Parameter] public string LogoAlt { get; set; } = "init logo";
+    [Parameter] public string Visual { get; set; } = "/assets/init/init-hero.png";
+    [Parameter] public string VisualAlt { get; set; } = "init application interface preview";
     [Parameter] public string Kicker { get; set; } = "";
     [Parameter] public string Headline { get; set; } = "";
     [Parameter] public string Subheadline { get; set; } = "";
