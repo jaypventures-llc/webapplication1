@@ -1,1 +1,5 @@
-<svg fill="#ffffff" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Verizon</title><path d="M18.302 0H22v.003L10.674 24H7.662L2 12h3.727l3.449 7.337z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 96" role="img" aria-label="Verizon logo">
+  <rect width="140" height="96" rx="22" fill="#07101C"/>
+  <text x="18" y="60" font-family="Inter, Arial, sans-serif" font-size="31" font-weight="900" fill="#F5F7FA">verizon</text>
+  <path d="M118 30l7 7 14-19" fill="none" stroke="#E60000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
