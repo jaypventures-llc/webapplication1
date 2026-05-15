@@ -37,7 +37,7 @@
   <text x="400" y="260" text-anchor="middle" font-family="Inter, 'Space Grotesk', 'Segoe UI', Arial, sans-serif" font-size="96" font-weight="950" letter-spacing="-0.06em" fill="#F5F7FA">JPV-OS</text>
 
   <!-- Tagline -->
-  <text x="400" y="310" text-anchor="middle" font-family="Inter, 'Space Grotesk', 'Segoe UI', Arial, sans-serif" font-size="16" font-weight="850" letter-spacing="0.24em" text-transform="uppercase" fill="#00D4FF">INFRASTRUCTURE OPERATING SYSTEM</text>
+  <text x="400" y="310" text-anchor="middle" font-family="Inter, 'Space Grotesk', 'Segoe UI', Arial, sans-serif" font-size="16" font-weight="850" letter-spacing="0.24em" fill="#00D4FF">INFRASTRUCTURE OPERATING SYSTEM</text>
 
   <!-- Operating layers -->
   <g transform="translate(180, 360)">
