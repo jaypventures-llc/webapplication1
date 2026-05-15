@@ -281,3 +281,95 @@ body{
         0 20px 40px rgba(0,0,0,.24);
 }
 
+
+/* =========================================
+   FINAL ENTERPRISE GRID REFINEMENT
+========================================= */
+
+.partner-grid{
+    display:grid;
+    grid-template-columns:
+        repeat(auto-fit,minmax(340px,1fr));
+    gap:28px;
+    align-items:stretch;
+}
+
+.partner-card{
+    min-height:260px;
+    height:100%;
+    padding:30px;
+}
+
+.partner-category{
+    margin-top:52px;
+}
+
+.partner-category:first-of-type{
+    margin-top:40px;
+}
+
+.partner-category-title{
+    margin-bottom:18px;
+}
+
+.partner-card h3{
+    font-size:32px;
+    line-height:1.02;
+    margin-bottom:14px;
+    word-break:keep-all;
+}
+
+.partner-card p{
+    max-width:95%;
+}
+
+.partner-icon-wrap{
+    flex-shrink:0;
+}
+
+.partner-card{
+    display:flex;
+    gap:22px;
+}
+
+.partner-card > div:last-child{
+    flex:1;
+}
+
+/* Better responsive behavior */
+
+@media(max-width:1400px){
+
+    .partner-grid{
+        grid-template-columns:
+            repeat(auto-fit,minmax(300px,1fr));
+    }
+
+    .partner-card h3{
+        font-size:28px;
+    }
+}
+
+@media(max-width:900px){
+
+    .partner-grid{
+        grid-template-columns:1fr;
+    }
+
+    .partner-card{
+        min-height:auto;
+    }
+
+    .partner-card h3{
+        font-size:24px;
+    }
+}
+
+/* Broken image fallback */
+
+.partner-icon{
+    background:#111827;
+    border-radius:10px;
+    padding:4px;
+}
+
