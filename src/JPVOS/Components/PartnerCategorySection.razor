@@ -1,4 +1,4 @@
-<section id="@Id" class="partner-category-section">
+<section class="partner-category-section">
     <div class="partner-category-copy">
         <span class="partner-category-label">@Label</span>
         <h2>@Title</h2>
@@ -17,7 +17,6 @@
 </section>
 
 @code {
-    [Parameter] public string Id { get; set; } = "";
     [Parameter] public string Title { get; set; } = "";
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Explanation { get; set; } = "";
