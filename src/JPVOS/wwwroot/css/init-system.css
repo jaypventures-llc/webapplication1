@@ -441,6 +441,7 @@ p {
 
 .partner-tile {
     height: 104px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -470,12 +471,18 @@ p {
 
 .partner-tile img,
 .partner-tile-mark {
-    width: 34px;
-    height: 34px;
+    flex: 0 0 auto;
+    width: 34px !important;
+    height: 34px !important;
+    max-width: 34px !important;
+    max-height: 34px !important;
+    min-width: 0;
+    min-height: 0;
     object-fit: contain;
 }
 
 .partner-tile img {
+    display: block;
     filter: grayscale(1) brightness(1.45) contrast(.95);
 }
 
@@ -490,6 +497,8 @@ p {
 }
 
 .partner-tile span {
+    display: block;
+    max-width: 100%;
     color: #dce4f4;
     font-size: 13px;
     font-weight: 600;
