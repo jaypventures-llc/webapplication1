@@ -19,6 +19,31 @@ public class StripeWebhookController : ControllerBase
         _discordService = discordService;
     }
 
+    private DateTime? GetSubscriptionExpirationDate(Stripe.Subscription sub)
+    {
+        // Handle both CurrentPeriodEnd (older versions) and CurrentPeriodEndUnix (newer versions)
+        var currentPeriodEndProperty = typeof(Stripe.Subscription).GetProperty("CurrentPeriodEnd");
+        if (currentPeriodEndProperty != null && currentPeriodEndProperty.GetValue(sub) is DateTime dt)
+        {
+            return dt;
+        }
+
+        var currentPeriodEndUnixProperty = typeof(Stripe.Subscription).GetProperty("CurrentPeriodEndUnix");
+        if (currentPeriodEndUnixProperty != null && currentPeriodEndUnixProperty.GetValue(sub) is long unixTime)
+        {
+            return UnixTimeStampToDateTime(unixTime);
+        }
+
+        return null;
+    }
+
+    private DateTime UnixTimeStampToDateTime(long unixTimeStamp)
+    {
+        var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+        return dateTime;
+    }
+
     [HttpPost]
     public async Task<IActionResult> Post()
     {
@@ -93,7 +118,7 @@ public class StripeWebhookController : ControllerBase
                 {
                     ent.StripeSubscriptionId = sub.Id;
                     ent.Status = sub.Status;
-                    ent.AccessExpiration = sub.CurrentPeriodEnd;
+                    ent.AccessExpiration = GetSubscriptionExpirationDate(sub);
                     _entitlementService.AddOrUpdate(ent);
                 }
                 break;
