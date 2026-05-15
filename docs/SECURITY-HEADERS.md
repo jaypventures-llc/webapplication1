@@ -92,12 +92,6 @@ xr-spatial-tracking=()
 
 **Behavior:** The page can only be framed by pages from the same origin.
 
-### X-XSS-Protection
-
-**Value:** `1; mode=block`
-
-**Purpose:** Legacy XSS protection header (primarily for older browsers). Modern browsers rely on CSP, but this provides defense in depth.
-
 ## Implementation Details
 
 ### Location
@@ -129,6 +123,26 @@ Security headers are applied to **all HTTP responses** in the application, inclu
 - API endpoints
 - Static files
 - Health check endpoints
+
+### Response Streaming Safety
+The middleware checks `context.Response.HasStarted` before adding headers to prevent exceptions if downstream middleware has already begun streaming the response. This ensures robust error handling and prevents crashes from header addition attempts on responses that are already in progress.
+
+## Security Considerations
+
+### Content-Security-Policy Trade-offs
+
+The implemented CSP uses `'unsafe-inline'` and `'unsafe-eval'` for scripts to maintain Blazor compatibility. This represents a deliberate trade-off:
+
+**Trade-off Rationale:**
+- Blazor's server-side rendering architecture requires dynamic script injection
+- Modern alternatives like CSP nonces would require significant architectural changes
+- The `default-src 'self'` and other directives still provide substantial protection against common XSS attacks
+- The restrictive default policies on other directives (images, fonts, connections) provide defense in depth
+
+**Future Improvements:**
+- Evaluate CSP nonces implementation after Blazor architecture modernization
+- Implement CSP report-only mode with violation monitoring to identify attack attempts
+- Consider stricter CSP in specific application sections that don't require inline scripts
 
 ## Development Mode
 
