@@ -77,13 +77,13 @@ Rounded corners reinforce the premium aesthetic:
 
 Semantic sizing using CSS `clamp()` for responsive scaling:
 
-- **Heading 1** (H1): `clamp(48px, 8vw, 140px)` — Page titles, hero text
-- **Heading 2** (H2): `clamp(36px, 6vw, 96px)` — Section titles
-- **Heading 3** (H3): `clamp(28px, 4vw, 64px)` — Subsections
-- **Body Large**: `clamp(18px, 1.5vw, 26px)` — Hero subtitles, prominent content
-- **Body Regular**: 16px — Standard body text
-- **Body Small**: 14px — Supporting text, labels
-- **Eyebrow/Kicker**: 13px — Category labels, section prefixes (uppercase, letter-spacing)
+- **Heading 1** (H1): `var(--jpv-text-3xl)` = `clamp(48px, 8vw, 140px)` — Page titles, hero text
+- **Heading 2** (H2): `var(--jpv-text-2xl)` = `clamp(36px, 6vw, 96px)` — Section titles
+- **Heading 3** (H3): `var(--jpv-text-xl)` = `clamp(28px, 4vw, 64px)` — Subsections
+- **Body Large**: `var(--jpv-text-lg)` = `clamp(18px, 1.5vw, 26px)` — Hero subtitles, prominent content
+- **Body Regular**: `var(--jpv-text-base)` = 16px — Standard body text
+- **Body Small**: `var(--jpv-text-sm)` = 14px — Supporting text, labels
+- **Eyebrow/Kicker**: `var(--jpv-text-xs)` = 13px — Category labels, section prefixes (uppercase, letter-spacing)
 
 ### Line Heights
 
@@ -218,7 +218,7 @@ All transitions and animations respect `prefers-reduced-motion` media query.
 
 ## Implementation Notes
 
-- All styling is centralized in `wwwroot/css/jpv-os.tokens.css` and `wwwroot/css/init-system.css`
+- All styling is centralized in `wwwroot/css/jpv-os.tokens.css`
 - No component-scoped CSS is used; all styles follow the shared CSS governance model
 - The CSS grid overlay creates visual depth without performance impact
 - Backdrop filters are essential to the glass aesthetic; ensure browser compatibility

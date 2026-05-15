@@ -196,6 +196,12 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -221,7 +227,6 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: var(--jpv-z-base);
   pointer-events: none;
   background:
     linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
@@ -372,13 +377,11 @@ a:hover {
 .jpv-bg-panel-soft {
   background-color: var(--jpv-panel-soft);
 }
-    min-height: 100vh;
-}
 
 .site-header {
     position: sticky;
     top: 0;
-    z-index: 50;
+    z-index: var(--jpv-z-dropdown);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -488,7 +491,7 @@ a:hover {
 }
 
 .hero-logo img {
-    width: min(360px, 72vw);
+    width: min(360px, 100%);
     height: auto;
     display: block;
     object-fit: contain;
@@ -496,21 +499,8 @@ a:hover {
     margin-bottom: 18px;
 }
 
-.logo-img {
-    display: block;
-    width: min(420px, 100%);
-    height: auto;
-    object-fit: contain;
-}
-
 .hero-logo {
     margin-bottom: 28px;
-}
-
-.hero-logo img {
-    width: min(360px, 100%);
-    height: auto;
-    display: block;
 }
 
 .section-kicker,
