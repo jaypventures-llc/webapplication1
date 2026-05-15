@@ -28,13 +28,16 @@ $PublicFacingPatterns = @(
     "docs/**/*.md"
 )
 $AllowedContextPatterns = @(
-    "*master*branch*",
-    "*source control*",
-    "*version control*",
-    "*control flow*",
+    "* git *",
+    "* version control *",
+    "* source control *",
+    "*master branch*",
     "*master key*",
     "*master class*",
-    "*master copy*"
+    "*control flow*",
+    "* by *",
+    "*made*available*",
+    "*development*"
 )
 
 # Color output
