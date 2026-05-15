@@ -93,7 +93,8 @@ public class StripeWebhookController : ControllerBase
                 {
                     ent.StripeSubscriptionId = sub.Id;
                     ent.Status = sub.Status;
-                    ent.AccessExpiration = sub.Items?.Data?.FirstOrDefault()?.CurrentPeriodEnd;
+                    ent.AccessExpiration = GetCurrentPeriodEnd(sub);
+                    ent.AccessExpiration = GetCurrentPeriodEnd(sub);
                     _entitlementService.AddOrUpdate(ent);
                 }
                 break;
@@ -116,5 +117,24 @@ public class StripeWebhookController : ControllerBase
             }
         }
         return Ok();
+    }
+
+    private DateTime? GetCurrentPeriodEnd(Subscription sub)
+    {
+        // Handle version compatibility for Stripe.net API
+        // CurrentPeriodEnd property may have different names/types across versions
+        var prop = sub.GetType().GetProperty("CurrentPeriodEnd");
+        if (prop != null && prop.GetValue(sub) is DateTime dt)
+        {
+            return dt;
+        }
+
+        prop = sub.GetType().GetProperty("CurrentPeriodEndUnix");
+        if (prop != null && prop.GetValue(sub) is long unix)
+        {
+            return DateTimeOffset.FromUnixTimeSeconds(unix).UtcDateTime;
+        }
+
+        return null;
     }
 }

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Stripe.Checkout;
 
+namespace JPVOS.Api;
+
 [ApiController]
 [Route("api/checkout")]
 public class CheckoutController : ControllerBase
@@ -40,12 +42,14 @@ public class CheckoutController : ControllerBase
         {
             "community" => _config["STRIPE_PRICE_ID_COMMUNITY"],
             "vip" => _config["STRIPE_PRICE_ID_VIP"],
+            "enterprise_infrastructure_annual" => _config["STRIPE_PRICE_ENTERPRISE_ANNUAL"],
+            "custom_implementation_one_time" => _config["STRIPE_PRICE_CUSTOM_IMPLEMENTATION"],
             _ => null
         };
 
         if (string.IsNullOrWhiteSpace(priceId))
         {
-            return BadRequest("Invalid or unavailable package key. Only Community and VIP are enabled for checkout.");
+            return BadRequest("Invalid or unavailable package key.");
         }
 
         var domain = $"{Request.Scheme}://{Request.Host.Value}";
@@ -79,12 +83,12 @@ public class CheckoutController : ControllerBase
 
         return Ok(new { url = session.Url });
     }
+}
 
-    public sealed class CheckoutRequest
-    {
-        public string PackageKey { get; set; } = "";
-        public string Interval { get; set; } = "monthly";
-        public string? SuccessUrl { get; set; }
-        public string? CancelUrl { get; set; }
-    }
+public class CheckoutRequest
+{
+    public string PackageKey { get; set; } = string.Empty;
+    public string Interval { get; set; } = "monthly";
+    public string? SuccessUrl { get; set; }
+    public string? CancelUrl { get; set; }
 }
