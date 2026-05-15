@@ -114,12 +114,16 @@ body{
     max-width: 1120px !important;
 }
 
+/* Command Center Home Structure */
+.home-command {
 .partners-hero .jpv-lede {
     margin-top: 22px !important;
     margin-bottom: 34px !important;
 }
 
 .partner-category {
+
+.command-module {
     margin-top: 36px !important;
 }
 
@@ -130,15 +134,21 @@ body{
 
 .partner-icon-wrap {
     width: 44px !important;
+
+.module-frame {
     height: 44px !important;
     background: rgba(255,255,255,.018) !important;
 }
 
+
+.schematic-grid {
 .partner-icon {
     width: 26px !important;
     height: 26px !important;
     opacity: .92 !important;
 }
+
+.route-node {
 
 /* FINAL ICON CURATION — CAPABILITY REGISTRY MODE */
 .partner-icon-wrap {
@@ -150,9 +160,11 @@ body{
     border: 1px solid rgba(255,255,255,.05) !important;
     box-shadow: none !important;
 }
+.route-node:hover {
 
 .partner-icon {
     width: 24px !important;
+.route-node img {
     height: 24px !important;
     opacity: .82 !important;
     filter: none !important;
@@ -161,24 +173,74 @@ body{
 .partner-card {
     grid-template-columns: 38px 1fr !important;
     padding: 16px 18px !important;
+.route-node h3 {
     gap: 14px !important;
     border-radius: 16px !important;
     background: linear-gradient(180deg, rgba(255,255,255,.026), rgba(255,255,255,.014)) !important;
 }
+.route-node p {
 
 .partner-copy h3 {
     font-size: 19px !important;
     line-height: 1.08 !important;
+.route-node .button {
     margin-bottom: 5px !important;
 }
 
+.decision-panel {
+
 .partner-copy p {
     font-size: 14px !important;
+
+.asset-panel {
     line-height: 1.5 !important;
     color: #B2BCD1 !important;
 }
 
+@media (max-width: 900px) {
+    .home-command {
+        gap: 32px;
+    }
+    .command-module.module-frame {
+        padding: 32px 8px 32px 8px;
+    }
+    .schematic-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .route-node img {
+        width: 64px;
+        height: 64px;
+    }
+}
+
+/* Mobile Navigation */
+.mobile-nav {
+
 .partner-badge {
+@media (max-width: 700px) {
+    .site-nav {
+        display: none;
+    }
+    .mobile-nav {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
+        background: rgba(14,18,30,0.98);
+        border-top: 1.5px solid rgba(0,212,255,0.12);
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 1000;
+        padding: 12px 0;
+    }
+    .mobile-nav a {
+        color: var(--jpv-cyan);
+        font-weight: 600;
+        text-decoration: none;
+        font-size: 1.1rem;
+        padding: 0 10px;
+    }
+}
     font-size: 8.5px !important;
     padding: 3px 8px !important;
     color: #91A5C7 !important;
