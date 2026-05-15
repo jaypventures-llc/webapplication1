@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Stripe;
 using System.Text;
 using System.Text.Json;
@@ -12,11 +13,18 @@ public class StripeWebhookController : ControllerBase
     private readonly IConfiguration _config;
     private readonly IEntitlementService _entitlementService;
     private readonly DiscordService _discordService;
-    public StripeWebhookController(IConfiguration config, IEntitlementService entitlementService, DiscordService discordService)
+    private readonly ILogger<StripeWebhookController> _logger;
+    
+    public StripeWebhookController(
+        IConfiguration config, 
+        IEntitlementService entitlementService, 
+        DiscordService discordService,
+        ILogger<StripeWebhookController> logger)
     {
         _config = config;
         _entitlementService = entitlementService;
         _discordService = discordService;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -112,9 +120,9 @@ public class StripeWebhookController : ControllerBase
                             }
                         }
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // If property access fails, skip setting expiration
+                        _logger.LogWarning(ex, "Failed to extract subscription period end date for subscription {SubscriptionId}", sub.Id);
                     }
                     _entitlementService.AddOrUpdate(ent);
                 }
