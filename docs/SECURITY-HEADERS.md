@@ -104,13 +104,24 @@ xr-spatial-tracking=()
 Security headers are implemented in `src/JPVOS/Program.cs` as a middleware extension method `UseSecurityHeaders()`.
 
 ### Application Point
-The middleware is registered in the HTTP request pipeline after routing configuration but before Razor components are mapped:
+The middleware is registered in the HTTP request pipeline immediately after the startup guard verification and before environment-specific middleware:
 
 ```csharp
-app.UseHttpsRedirection();
+var app = builder.Build();
+PeopleProtectionStartupGuard.Verify(app);
+
+// Add security headers early in the pipeline
 app.UseSecurityHeaders();
-app.UseStaticFiles();
+
+// Environment-specific middleware follows
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
+}
 ```
+
+Placing the security headers middleware early in the pipeline ensures that security headers are applied to all HTTP responses, including error responses and redirects.
 
 ### Scope
 Security headers are applied to **all HTTP responses** in the application, including:

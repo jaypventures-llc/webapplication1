@@ -70,6 +70,9 @@ static class SecurityHeadersExtensions
     {
         app.Use(async (context, next) =>
         {
+            // Add security headers before the response starts streaming.
+            // This ensures headers are present in the response regardless of downstream middleware.
+            
             // Content-Security-Policy: Prevents XSS attacks while allowing Blazor functionality
             // - default-src 'self': Restrict to same origin by default
             // - script-src 'self' 'unsafe-inline' 'unsafe-eval': Allow inline scripts for Blazor
