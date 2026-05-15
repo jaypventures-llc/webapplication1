@@ -1,6 +1,10 @@
 $ErrorActionPreference = "Stop"
 
 # Banned terms for public-facing content
+# These terms are prohibited to maintain inclusive language standards and brand consistency:
+# - "division" implies departmental silos; use "team" or "group" instead
+# - "master" has problematic historical connotations; use "primary", "main", or "primary copy" instead
+# - "control" focuses on dominance; use "manage", "govern", or "administer" instead
 $BannedTerms = @(
   "division",
   "master",
@@ -16,14 +20,20 @@ $ExcludeFolders = @("bin", "obj", ".git", "backup", "archive", "reference")
 Write-Host "=== UI Verification Script ===" -ForegroundColor Cyan
 Write-Host ""
 
-# Step 1: Find the active .csproj file
-Write-Host "Step 1: Finding active .csproj file..." -ForegroundColor Cyan
+# Step 1: Find the solution file and active .csproj file
+Write-Host "Step 1: Finding active project files..." -ForegroundColor Cyan
+
+$slnFiles = @(Get-ChildItem -Path "." -Depth 1 -Filter "*.sln" -ErrorAction SilentlyContinue)
+if ($slnFiles.Count -eq 0) {
+  Write-Host "FAIL: No .sln file found in repository root" -ForegroundColor Red
+  exit 1
+}
+
+$slnPath = $slnFiles[0].FullName
+$slnName = $slnFiles[0].Name
 
 $csprojFiles = @()
-if (Test-Path "JPVOS.sln") {
-  # Look for .csproj files in src/JPVOS directory (primary project)
-  $csprojFiles = Get-ChildItem -Path "src" -Recurse -Filter "*.csproj" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "src[\/\\]JPVOS[\/\\]" }
-}
+$csprojFiles = Get-ChildItem -Path "src" -Recurse -Filter "*.csproj" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "src[\/\\][^\/\\]+[\/\\]" } | Select-Object -First 1
 
 if ($csprojFiles.Count -eq 0) {
   Write-Host "FAIL: No .csproj file found" -ForegroundColor Red
@@ -34,14 +44,15 @@ $csprojPath = $csprojFiles[0].FullName
 $csprojDir = Split-Path -Parent $csprojPath
 $projectName = Split-Path -Leaf $csprojDir
 
-Write-Host "  Found: $csprojPath" -ForegroundColor Green
+Write-Host "  Found solution: $slnName" -ForegroundColor Green
+Write-Host "  Found project: $projectName" -ForegroundColor Green
 
 # Step 2: Run dotnet build
 Write-Host ""
 Write-Host "Step 2: Running dotnet build..." -ForegroundColor Cyan
 
 try {
-  $buildOutput = dotnet build JPVOS.sln -c Release 2>&1
+  $buildOutput = dotnet build $slnPath -c Release 2>&1
   if ($LASTEXITCODE -ne 0) {
     Write-Host "FAIL: Build failed" -ForegroundColor Red
     Write-Host $buildOutput
@@ -80,7 +91,8 @@ foreach ($ext in $FileExtensions) {
     if ($null -eq $content) { continue }
     
     foreach ($term in $BannedTerms) {
-      # Case-insensitive search for whole word matches
+      # Case-insensitive search for whole word matches (word boundaries assume standard alphanumeric context)
+      # Note: Word boundaries (\b) work for ASCII alphanumeric characters; for special characters, consider more specific patterns
       if ($content -imatch "\b$([regex]::Escape($term))\b") {
         $filesWithBannedTerms += $file.FullName
         $bannedTermsFound += @{
