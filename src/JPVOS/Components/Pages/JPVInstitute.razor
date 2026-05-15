@@ -1,20 +1,14 @@
-@* legacy route disabled: route owned by /Pages *@
-<main class="brand-page">
-    <section class="brand-hero">
-        <div class="brand-copy">
-            <p class="brand-kicker">JPV Institute</p>
-            <h1>Knowledge systems for the future.</h1>
-            <p>Standards, doctrine, education, and infrastructure literacy.</p>
-        </div>
+@page "/jpv-institute"
+@page "/institute"
 
-        <div class="brand-hero-art">
-            <div class="missing-brand-art">Missing JPV Institute image</div>
-        </div>
-    </section>
+<BrandPage
+    Kicker="Research & Doctrine"
+    Title="JPV Institute"
+    Image="/assets/jpv-institute/jpv-institute-hero.png"
+    Lead="JPV Institute is the research, doctrine, and education layer. It converts complex systems work into standards, frameworks, review models, and institutional knowledge."
+    Capabilities="Research Validation::Reviews ideas, claims, and system models through structured evidence and disciplined inquiry.|Systems Doctrine::Creates clear operating principles that can be taught, audited, and improved over time.|Ethics Review::Maintains human-centered standards for responsible infrastructure, AI behavior, and institutional trust.|Education Standards::Builds learning paths for infrastructure literacy, governance awareness, and systems thinking.">
 
-    <section class="brand-gallery">
-        <article></article>
-        <article></article>
-    </section>
-</main>
-
+    <PackageCard Eyebrow="Institute" Name="Research Review" Price="$350" Term="one-time" Detail="Structured review of claims, concepts, frameworks, or system models for clarity and evidence readiness." Features="Evidence review|Framework notes|Citation path|Improvement summary" CheckoutUrl="/checkout-not-configured" />
+    <PackageCard Eyebrow="Institute" Name="Doctrine Development" Price="$1,200" Term="one-time" Detail="Development package for standards, principles, review models, or institutional knowledge documents." Features="Doctrine outline|Policy language|Review checklist|Publication prep" CheckoutUrl="/checkout-not-configured" />
+    <PackageCard Eyebrow="Institute" Name="Education Framework" Price="$2,500" Term="starting package" Detail="A structured education or literacy framework for teams, members, or institutional audiences." Features="Learning map|Standards model|Review structure|Implementation guide" CheckoutUrl="/checkout-not-configured" />
+</BrandPage>

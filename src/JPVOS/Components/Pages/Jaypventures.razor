@@ -1,15 +1,14 @@
-@* legacy route disabled: route owned by /Pages *@
-<main class="brand-page">
-    <section class="brand-hero">
-        <div class="brand-copy">
-            <p class="brand-kicker">jaypventures</p>
-            <h1>Venture studio and creator ecosystem.</h1>
-            <p>Launch pathways, market activation, creator systems, and community growth.</p>
-        </div>
+@page "/jaypventures"
+@page "/creator"
 
-        <div class="brand-hero-art">
-            <div class="missing-brand-art">Missing jaypventures image<br /><small>Expected folder: /assets/brand/jaypventures</small></div>
-        </div>
-    </section>
-</main>
+<BrandPage
+    Kicker="Creator Ecosystem"
+    Title="jaypventures"
+    Image="/assets/jaypventures/jaypventures-hero.png"
+    Lead="jaypventures is the market-facing creator and venture ecosystem for launches, audience experience, membership routing, public engagement, and creator-led execution."
+    Capabilities="Venture Launches::Packages ideas, campaigns, and creator initiatives into public-facing launch paths.|Creator Systems::Supports content, community, access, and membership experiences with structured routing.|Public Engagement::Connects ecosystem work to audiences through accessible brand surfaces.|Market-Facing Experiences::Turns validated concepts into brand experiences designed for real-world adoption.">
 
+    <PackageCard Eyebrow="Creator" Name="Creator Launch Kit" Price="$297" Term="one-time" Detail="A starter package for creator positioning, launch routing, content direction, and audience access setup." Features="Launch profile|Link routing|Offer outline|Content direction" CheckoutUrl="/checkout-not-configured" />
+    <PackageCard Eyebrow="Creator" Name="Venture Buildout" Price="$997" Term="one-time" Detail="A structured buildout for creator brands, digital offers, community access, and public-facing web presentation." Features="Brand page|Offer structure|Community path|Launch checklist" CheckoutUrl="/checkout-not-configured" />
+    <PackageCard Eyebrow="Creator" Name="Momentum Support" Price="$250" Term="monthly" Detail="Ongoing creator support for launch refinement, content operations, and market-facing execution." Features="Monthly strategy|Content alignment|Offer updates|Community routing" CheckoutUrl="/checkout-not-configured" />
+</BrandPage>

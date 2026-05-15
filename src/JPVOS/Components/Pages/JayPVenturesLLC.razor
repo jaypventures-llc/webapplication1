@@ -1,15 +1,14 @@
-@* legacy route disabled: route owned by /Pages *@
-<main class="brand-page">
-    <section class="brand-hero">
-        <div class="brand-copy">
-            <p class="brand-kicker">JayPVentures LLC</p>
-            <h1>Infrastructure. Intelligence. Impact.</h1>
-            <p>Enterprise infrastructure and venture execution for long-term value.</p>
-        </div>
+@page "/jaypventures-llc"
+@page "/enterprise"
 
-        <div class="brand-hero-art">
-            <div class="missing-brand-art">Missing JayPVentures LLC image<br /><small>Expected folder: /assets/brand/jaypventures-llc</small></div>
-        </div>
-    </section>
-</main>
+<BrandPage
+    Kicker="Enterprise Infrastructure"
+    Title="JayPVentures LLC"
+    Image="/assets/jaypventures-llc/jaypventures-llc-hero.png"
+    Lead="JayPVentures LLC is the enterprise infrastructure authority for architecture, operational execution, strategic alignment, governance integrity, and long-range business readiness."
+    Capabilities="Infrastructure Architecture::Designs systems for reliability, continuity, and scalable execution.|Strategic Alignment::Keeps enterprise work connected to clear priorities and measurable outcomes.|Governance Integrity::Supports disciplined operating standards, documentation, and review practices.|Business Readiness::Prepares systems, packages, and delivery models for operational scale.">
 
+    <PackageCard Eyebrow="Enterprise" Name="Infrastructure Review" Price="$750" Term="one-time" Detail="A focused review of current business infrastructure, identity, web presence, and operational readiness." Features="Infrastructure audit|Risk notes|Priority recommendations|30-minute review" CheckoutUrl="/checkout-not-configured" />
+    <PackageCard Eyebrow="Enterprise" Name="Operating System Setup" Price="$2,500" Term="starting package" Detail="Structured implementation package for business systems, access routing, web infrastructure, and operational documentation." Features="System architecture|Workflow map|Security alignment|Launch checklist" CheckoutUrl="/checkout-not-configured" />
+    <PackageCard Eyebrow="Enterprise" Name="Strategic Infrastructure Retainer" Price="$1,500" Term="monthly" Detail="Ongoing operational alignment for infrastructure, governance, content systems, and delivery readiness." Features="Monthly planning|System updates|Governance review|Priority support" CheckoutUrl="/checkout-not-configured" />
+</BrandPage>
