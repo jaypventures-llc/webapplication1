@@ -44,6 +44,7 @@ if (-not (Test-Path "src")) {
   exit 1
 }
 
+# Find .csproj files in first-level subdirectories of src (expected structure: src/ProjectName/ProjectName.csproj)
 $csprojFiles = @(Get-ChildItem -Path "src" -Recurse -Filter "*.csproj" -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "src[\/\\][^\/\\]+[\/\\]" })
 
 if ($csprojFiles.Count -eq 0) {
@@ -102,8 +103,9 @@ foreach ($ext in $FileExtensions) {
     if ($null -eq $content) { continue }
     
     foreach ($term in $BannedTerms) {
-      # Case-insensitive search for whole word matches (word boundaries assume standard alphanumeric context)
-      # Note: Word boundaries (\b) work for ASCII alphanumeric characters; for special characters, consider more specific patterns
+      # Case-insensitive search for whole word matches
+      # Note: Uses \b for word boundaries; compound technical terms like 'master-branch' may match.
+      # In UI files, such false positives are less common than in code; review matches contextually.
       if ($content -imatch "\b$([regex]::Escape($term))\b") {
         $filesWithBannedTerms += $file.FullName
         $bannedTermsFound += @{
