@@ -1,0 +1,16 @@
+<div class="partner-card">
+    <div class="partner-icon-wrap">
+        <img src="@Icon" alt="@Name logo" class="partner-icon" />
+    </div>
+
+    <div>
+        <h3>@Name</h3>
+        <p>@Detail</p>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Name { get; set; } = "";
+    [Parameter] public string Detail { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "";
+}
