@@ -63,7 +63,7 @@ This document provides a structured visual review process to ensure the JPV-OS A
 
 - [ ] Experimental/research identity.
 - [ ] Validation-oriented.
-- [ ] Controlled innovation tone avoided in public copy where possible; prefer validation language.
+- [ ] Public copy prefers validation language over "innovation" or "cutting-edge" terminology.
 - [ ] Copy uses: `jaypVLabs validates research, prototypes, AI behavior, and system patterns before they move into production.`
 
 ---
