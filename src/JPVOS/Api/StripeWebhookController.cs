@@ -95,9 +95,13 @@ public class StripeWebhookController : ControllerBase
             case "customer.subscription.updated":
             {
                 var sub = stripeEvent.Data.Object as Stripe.Subscription ?? JsonSerializer.Deserialize<Stripe.Subscription>(stripeEvent.Data.Object.ToString());
-                var customerId = sub?.CustomerId;
-                var ent = _entitlementService.GetByStripeCustomerId(customerId);
-                if (ent != null && sub != null)
+                if (sub == null || string.IsNullOrWhiteSpace(sub.CustomerId))
+                {
+                    break;
+                }
+
+                var ent = _entitlementService.GetByStripeCustomerId(sub.CustomerId);
+                if (ent != null)
                 {
                     ent.StripeSubscriptionId = sub.Id;
                     ent.Status = sub.Status;

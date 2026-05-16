@@ -69,11 +69,11 @@ docker push ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
 ### dotnet publish (Self-Contained)
 
 ```bash
-dotnet publish src/JPVOS/JPVOS.csproj -c Release -o ./publish
+dotnet publish src/JPVOS/JPVOS.csproj -c Release -r linux-x64 --self-contained true -o ./publish
 ```
 
-This produces a self-contained application ready for deployment. The output directory contains:
-- `JPVOS.dll` - Main application assembly
+This produces a runtime-specific self-contained application ready for deployment. The output directory contains:
+- `JPVOS` - Native launcher executable for the selected runtime (`linux-x64` above)
 - `appsettings.Production.json` - Production configuration template
 - All dependencies and runtime files
 
