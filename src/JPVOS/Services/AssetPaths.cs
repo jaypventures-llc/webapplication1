@@ -12,7 +12,7 @@ public static class AssetPaths
 
     public static class Init
     {
-        public const string Hero = "/assets/init/init-hero.png";
+        public const string Hero = "/assets/approved/init-hero.png";
     }
 
     public static class JayPVenturesLlc
