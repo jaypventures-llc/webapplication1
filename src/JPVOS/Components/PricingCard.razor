@@ -3,8 +3,8 @@
     <p class="card-eyebrow">@Eyebrow</p>
     <h3>@Name</h3>
     <div class="price-line">
-        <strong>@(BillingInterval == "annual" ? AnnualPrice : MonthlyPrice)</strong>
-        <span>@(BillingInterval == "annual" ? "annual" : "monthly")</span>
+        <strong>@GetDisplayPrice()</strong>
+        <span>@GetDisplayTerm()</span>
     </div>
     <p>@Description</p>
     <div class="feature-list">
@@ -26,12 +26,21 @@
     [Parameter] public string BillingInterval { get; set; } = "monthly";
     [Parameter] public string PackageKey { get; set; } = "";
     [Parameter] public bool IsDisabled { get; set; } = false;
-    [Parameter] public EventCallback OnCheckout { get; set; };
+    [Parameter] public EventCallback OnCheckout { get; set; }
     [Parameter] public string Cta { get; set; } = "Get init";
     
     // Alternative properties for simpler billing models
     [Parameter] public string Price { get; set; } = "";
     [Parameter] public string Term { get; set; } = "";
     [Parameter] public string Href { get; set; } = "/checkout-not-configured";
-}
 
+    private string GetDisplayPrice()
+        => !string.IsNullOrWhiteSpace(Price)
+            ? Price
+            : (BillingInterval == "annual" ? AnnualPrice : MonthlyPrice).ToString();
+
+    private string GetDisplayTerm()
+        => !string.IsNullOrWhiteSpace(Term)
+            ? Term
+            : (BillingInterval == "annual" ? "annual" : "monthly");
+}
