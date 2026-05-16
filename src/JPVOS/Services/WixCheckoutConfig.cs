@@ -19,6 +19,11 @@ public class WixCheckoutConfig
     /// </summary>
     public string GetCheckoutUrl(string packageKey, string interval = "monthly")
     {
+        if (string.IsNullOrWhiteSpace(packageKey))
+        {
+            return "/checkout-not-configured";
+        }
+
         // Check for specific package configuration
         var configKey = $"WIX_CHECKOUT_URL_{packageKey.ToUpperInvariant()}_{interval.ToUpperInvariant()}";
         var url = _config[configKey];
