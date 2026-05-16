@@ -220,6 +220,11 @@ body{
 }
 
 .partner-badge {
+    font-size: 8.5px !important;
+    padding: 3px 8px !important;
+    color: #91A5C7 !important;
+}
+
 @media (max-width: 700px) {
     .site-nav {
         display: none;
@@ -253,10 +258,6 @@ body{
         color: var(--jpv-cyan);
         font-weight: 900;
     }
-}
-    font-size: 8.5px !important;
-    padding: 3px 8px !important;
-    color: #91A5C7 !important;
 }
 
 .partner-meta {
