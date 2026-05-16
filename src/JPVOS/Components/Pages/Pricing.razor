@@ -1,97 +1,5 @@
 @page "/pricing"
 @page "/packages"
-
-<div class="page-stack">
-    <PageHero Kicker="Pricing"
-              Title="Packages and checkout-ready cards."
-              Description="init keeps the commercial paths visible: member access, creator launch, partner package, enterprise infrastructure, and custom implementation."
-              Image="@AssetPaths.Init.Hero"
-              ImageAlt="init package and access interface visual" />
-
-    <section class="content-section">
-        <div class="pricing-toggle">
-            <button class="toggle-btn @(annual ? "" : "active")" @onclick="() => annual = false">Monthly</button>
-            <button class="toggle-btn @(annual ? "active" : "")" @onclick="() => annual = true">Annual <span class="toggle-save">(2 months free)</span></button>
-        </div>
-        <div class="pricing-grid">
-            @foreach (var pkg in Packages)
-            {
-                if (pkg.Key == "member_access" || pkg.Key == "creator_launch")
-                {
-                    <PricingCard
-                        Eyebrow="@pkg.Eyebrow"
-                        Name="@pkg.Name"
-                        MonthlyPrice="@pkg.Monthly"
-                        AnnualPrice="@pkg.Annual"
-                        Description="@pkg.Description"
-                        Features="@pkg.Features"
-                        BillingInterval="@(annual ? "annual" : "monthly")"
-                        PackageKey="@GetPackageKey(pkg)"
-                        Cta="Get init"
-                        OnCheckout="() => StartCheckout(GetPackageKey(pkg), GetTerm(pkg))"
-                        Href="/checkout"
-                    />
-                }
-                else if (pkg.Key == "partner_package")
-                {
-                    <PricingCard
-                        Eyebrow="@pkg.Eyebrow"
-                        Name="@pkg.Name"
-                        MonthlyPrice="@pkg.Monthly"
-                        AnnualPrice="@pkg.Annual"
-                        Description="@pkg.Description"
-                        Features="@pkg.Features"
-                        BillingInterval="@(annual ? "annual" : "monthly")"
-                        PackageKey="@pkg.Key"
-                        Cta="Request partner access"
-                        IsDisabled="true"
-                        Href="/contact"
-                    />
-                }
-                else if (pkg.Key == "enterprise_infrastructure")
-                {
-                    <PricingCard
-                        Eyebrow="@pkg.Eyebrow"
-                        Name="@pkg.Name"
-                        MonthlyPrice="@pkg.Monthly"
-                        AnnualPrice="@pkg.Annual"
-                        Description="@pkg.Description"
-                        Features="@pkg.Features"
-                        BillingInterval="@(annual ? "annual" : "monthly")"
-                        PackageKey="@pkg.Key"
-                        Cta="Request enterprise package"
-                        IsDisabled="true"
-                        Href="/contact"
-                    />
-                }
-                else if (pkg.Key == "custom_implementation")
-                {
-                    <PricingCard
-                        Eyebrow="@pkg.Eyebrow"
-                        Name="@pkg.Name"
-                        MonthlyPrice="@pkg.Monthly"
-                        AnnualPrice="@pkg.Annual"
-                        Description="@pkg.Description"
-                        Features="@pkg.Features"
-                        BillingInterval="@(annual ? "annual" : "monthly")"
-                        PackageKey="@pkg.Key"
-                        Cta="Contact for quote"
-                        IsDisabled="true"
-                        Href="/contact"
-                    />
-                }
-            }
-        </div>
-    </section>
-
-    <CTASection Title="Get init."
-                Description="Choose the package path that fits the next move, then route into the right access environment."
-                PrimaryCta="Get init"
-                PrimaryHref="/pricing"
-                SecondaryCta="Route Access"
-                SecondaryHref="/access" />
-</div>
-
 @code {
     [Inject] private HttpClient Http { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
@@ -129,14 +37,92 @@
 
     private string GetPackageKey(Package pkg)
     {
-        // Only wire real Stripe prices for Community and VIP
         return pkg.Key switch
         {
             "member_access" => "community",
             "creator_launch" => "vip",
-            _ => pkg.Key // fallback for inquiry
+            _ => pkg.Key
         };
     }
+
+<div class="page-stack">
+    <PageHero Kicker="Pricing"
+              Title="Packages and checkout-ready cards."
+              Description="init keeps the commercial paths visible: member access, creator launch, partner package, enterprise infrastructure, and custom implementation."
+              Image="@AssetPaths.Init.Hero"
+              ImageAlt="init package and access interface visual" />
+
+    <section class="content-section">
+        <div class="pricing-toggle">
+            <button class="toggle-btn @(annual ? "" : "active")" @onclick="() => annual = false">Monthly</button>
+            <button class="toggle-btn @(annual ? "active" : "")" @onclick="() => annual = true">Annual <span class="toggle-save">(2 months free)</span></button>
+        </div>
+        <div class="pricing-grid">
+            @foreach (var pkg in Packages)
+            {
+                if (pkg.Key == "member_access" || pkg.Key == "creator_launch")
+                {
+                    <PricingCard
+                        Eyebrow="@pkg.Eyebrow"
+                        Name="@pkg.Name"
+                        Price="@GetPrice(pkg)"
+                        Term="@GetTerm(pkg)"
+                        Description="@pkg.Description"
+                        Features="@pkg.Features"
+                        Cta="Get init"
+                        OnCheckout="() => StartCheckout(GetPackageKey(pkg), GetTerm(pkg))" />
+                }
+                else if (pkg.Key == "partner_package")
+                {
+                    <PricingCard
+                        Eyebrow="@pkg.Eyebrow"
+                        Name="@pkg.Name"
+                        Price="@GetPrice(pkg)"
+                        Term="@GetTerm(pkg)"
+                        Description="@pkg.Description"
+                        Features="@pkg.Features"
+                        Cta="Request partner access"
+                        IsDisabled="true" />
+                }
+                else if (pkg.Key == "enterprise_infrastructure")
+                {
+                    <PricingCard
+                        Eyebrow="@pkg.Eyebrow"
+                        Name="@pkg.Name"
+                        Price="@GetPrice(pkg)"
+                        Term="@GetTerm(pkg)"
+                        Description="@pkg.Description"
+                        Features="@pkg.Features"
+                        Cta="Request enterprise package"
+                        IsDisabled="true" />
+                }
+                else if (pkg.Key == "custom_implementation")
+                {
+                    <PricingCard
+                        Eyebrow="@pkg.Eyebrow"
+                        Name="@pkg.Name"
+                        Price="@GetPrice(pkg)"
+                        Term="@GetTerm(pkg)"
+                        Description="@pkg.Description"
+                        Features="@pkg.Features"
+                        Cta="Contact for quote"
+                        IsDisabled="true" />
+                }
+            }
+        </div>
+    </section>
+
+    <CTASection Title="Get init."
+                Description="Choose the package path that fits the next move, then route into the right access environment."
+                PrimaryCta="Get init"
+                PrimaryHref="/pricing"
+                SecondaryCta="Route Access"
+                SecondaryHref="/access" />
+</div>
+
+@code {
+    [Inject] private HttpClient Http { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
     private async Task StartCheckout(string packageKey, string interval)
     {
@@ -148,10 +134,6 @@
             {
                 NavigationManager.NavigateTo(result.url, forceLoad: true);
             }
-        }
-        else
-        {
-            // Optionally show error
         }
     }
 
