@@ -321,8 +321,8 @@ get_publish_profile() {
         return 1
     fi
     
-    local FILE_SIZE=$(wc -c < "$PROFILE_PATH")
-    write_success "Publish profile generated: $PROFILE_PATH ($FILE_SIZE bytes)"
+    local file_size=$(wc -c < "$PROFILE_PATH")
+    write_success "Publish profile generated: $PROFILE_PATH ($file_size bytes)"
     
     echo "$PROFILE_PATH"
     return 0
@@ -423,8 +423,8 @@ test_deployment_prerequisites() {
     
     # Test health endpoint availability
     write_info "Checking health endpoint configuration..."
-    local PROJ_PATH="$REPO_ROOT/src/JPVOS/Program.cs"
-    if grep -q "health" "$PROJ_PATH"; then
+    local proj_path="$REPO_ROOT/src/JPVOS/Program.cs"
+    if grep -q 'MapGet.*"/health"' "$proj_path"; then
         write_success "Health endpoint configured at /health"
     else
         write_error "Health endpoint not found in Program.cs"

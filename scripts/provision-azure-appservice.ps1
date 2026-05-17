@@ -452,7 +452,7 @@ function Test-DeploymentPrerequisites {
     # Test health endpoint availability
     Write-ScriptInfo "Checking health endpoint configuration..."
     $projPath = Join-Path (Split-Path $PSScriptRoot) "src/JPVOS/Program.cs"
-    if (Get-Content $projPath | Select-String "health" -Quiet) {
+    if (Get-Content $projPath | Select-String 'MapGet.*"/health"' -Quiet) {
         Write-ScriptSuccess "Health endpoint configured at /health"
     } else {
         Write-ScriptError "Health endpoint not found in Program.cs"
