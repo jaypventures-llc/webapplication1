@@ -35,6 +35,7 @@ write_info() {
 
 # Parse arguments
 PATH_OPTION="A"
+# Tenant ID for JayPVentures LLC - This is public information per problem statement
 TENANT_ID="f2f234f1-e912-4f16-a31d-6a102faea644"
 SUBSCRIPTION_ID=""
 RESOURCE_GROUP="rg-jpv-os-prod"
@@ -424,7 +425,7 @@ test_deployment_prerequisites() {
     # Test health endpoint availability
     write_info "Checking health endpoint configuration..."
     local proj_path="$REPO_ROOT/src/JPVOS/Program.cs"
-    if grep -q 'MapGet.*"/health"' "$proj_path"; then
+    if grep -q 'app\.MapGet.*"/health"' "$proj_path"; then
         write_success "Health endpoint configured at /health"
     else
         write_error "Health endpoint not found in Program.cs"

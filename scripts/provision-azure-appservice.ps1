@@ -59,6 +59,7 @@ param(
     [ValidateSet("A", "B", "C")]
     [string]$Path = "A",
     
+    # Tenant ID for JayPVentures LLC - This is public information per problem statement
     [string]$TenantId = "f2f234f1-e912-4f16-a31d-6a102faea644",
     
     [string]$SubscriptionId,
@@ -452,7 +453,7 @@ function Test-DeploymentPrerequisites {
     # Test health endpoint availability
     Write-ScriptInfo "Checking health endpoint configuration..."
     $projPath = Join-Path (Split-Path $PSScriptRoot) "src/JPVOS/Program.cs"
-    if (Get-Content $projPath | Select-String 'MapGet.*"/health"' -Quiet) {
+    if (Get-Content $projPath | Select-String 'app\.MapGet.*"/health"' -Quiet) {
         Write-ScriptSuccess "Health endpoint configured at /health"
     } else {
         Write-ScriptError "Health endpoint not found in Program.cs"
