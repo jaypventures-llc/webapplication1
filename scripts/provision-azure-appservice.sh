@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-# set -euo pipefail
+set -euo pipefail
+
+# Establish script and repository root directories
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Color output helpers
 RED='\033[0;31m'
@@ -188,10 +192,8 @@ new_resource_group() {
     
     # Check if already exists
     if az group exists --name "$RG_NAME" --output json | jq -e 'true' &>/dev/null; then
-        if az group show --name "$RG_NAME" &>/dev/null; then
-            write_success "Resource group already exists: $RG_NAME"
-            return 0
-        fi
+        write_success "Resource group already exists: $RG_NAME"
+        return 0
     fi
     
     write_info "Creating resource group: $RG_NAME in region: $REGION"
@@ -298,7 +300,6 @@ enable_https_only() {
 get_publish_profile() {
     local RG_NAME=$1
     local APP_NAME=$2
-    local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     local PROFILE_PATH="$SCRIPT_DIR/azure-publish-profile-$APP_NAME.xml"
     
     write_section "Generating Publish Profile"
@@ -371,7 +372,7 @@ test_alternate_runtimes() {
     write_info "1. Fly.io (Recommended for quick start)"
     write_info "   Command: fly auth login && fly deploy"
     write_info "   Config: fly.toml (already configured)"
-    if [ -f "$(dirname $(dirname "${BASH_SOURCE[0]}"))/fly.toml" ]; then
+    if [ -f "$REPO_ROOT/fly.toml" ]; then
         write_success "   fly.toml found in repository"
     fi
     
@@ -380,7 +381,7 @@ test_alternate_runtimes() {
     write_info "2. Render"
     write_info "   Command: render deploy"
     write_info "   Config: render.yaml (already configured)"
-    if [ -f "$(dirname $(dirname "${BASH_SOURCE[0]}"))/render.yaml" ]; then
+    if [ -f "$REPO_ROOT/render.yaml" ]; then
         write_success "   render.yaml found in repository"
     fi
     
@@ -422,7 +423,7 @@ test_deployment_prerequisites() {
     
     # Test health endpoint availability
     write_info "Checking health endpoint configuration..."
-    local PROJ_PATH="$(dirname $(dirname "${BASH_SOURCE[0]}"))/src/JPVOS/Program.cs"
+    local PROJ_PATH="$REPO_ROOT/src/JPVOS/Program.cs"
     if grep -q "health" "$PROJ_PATH"; then
         write_success "Health endpoint configured at /health"
     else
