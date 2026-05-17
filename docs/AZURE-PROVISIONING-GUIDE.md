@@ -200,15 +200,17 @@ The provisioning scripts accept optional parameters:
 
 ### App Service Plan SKU Options
 
-| SKU | Cores | RAM | Price | Best For |
-|-----|-------|-----|-------|----------|
-| B1  | 1     | 1GB | $10/mo | Development, small production |
-| B2  | 2     | 3.5GB | $50/mo | Small production workloads |
-| B3  | 4     | 7GB | $100/mo | Medium production |
-| S1  | 1     | 1.75GB | $75/mo | Production (1 instance) |
-| S2  | 2     | 3.5GB | $150/mo | Production (2 instances) |
-| S3  | 4     | 7GB | $300/mo | Production (3 instances) |
-| P1V2 | 1 | 3.5GB | $195/mo | High-performance |
+> **Note:** Pricing shown below is approximate and based on historical rates. Prices may change. For current pricing, see [Azure App Service Pricing](https://azure.microsoft.com/en-us/pricing/details/app-service/).
+
+| SKU | Cores | RAM | Price (approx.) | Best For |
+|-----|-------|-----|------------------|----------|
+| B1  | 1     | 1GB | ~$10/mo | Development, small production |
+| B2  | 2     | 3.5GB | ~$50/mo | Small production workloads |
+| B3  | 4     | 7GB | ~$100/mo | Medium production |
+| S1  | 1     | 1.75GB | ~$75/mo | Production (1 instance) |
+| S2  | 2     | 3.5GB | ~$150/mo | Production (2 instances) |
+| S3  | 4     | 7GB | ~$300/mo | Production (3 instances) |
+| P1V2 | 1 | 3.5GB | ~$195/mo | High-performance |
 
 Recommendation: **B1 for quick validation, S1+ for production**
 

@@ -425,7 +425,7 @@ test_deployment_prerequisites() {
     # Test health endpoint availability
     write_info "Checking health endpoint configuration..."
     local proj_path="$REPO_ROOT/src/JPVOS/Program.cs"
-    if grep -q 'app\.MapGet.*"/health"' "$proj_path"; then
+    if grep -q "app\\.MapGet.*\"/health\"" "$proj_path"; then
         write_success "Health endpoint configured at /health"
     else
         write_error "Health endpoint not found in Program.cs"
