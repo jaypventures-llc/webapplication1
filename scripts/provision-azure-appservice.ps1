@@ -499,7 +499,7 @@ function Test-HealthEndpoint {
         $attempt++
         
         try {
-            $response = Invoke-WebRequest -Uri $url -SkipCertificateCheck -TimeoutSec 10 -ErrorAction SilentlyContinue
+            $response = Invoke-WebRequest -Uri $url -TimeoutSec 10 -ErrorAction SilentlyContinue
             
             if ($response.StatusCode -eq 200) {
                 Write-Success "Health endpoint is responding: $url"
@@ -531,6 +531,8 @@ function Show-Summary {
         [string]$PublishProfilePath,
         [bool]$HealthCheckPassed
     )
+    
+    $url = "https://$WebAppName.azurewebsites.net/api/health"
     
     Write-Host ""
     Write-Success "========================================="

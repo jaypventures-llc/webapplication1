@@ -360,9 +360,9 @@ test_health_endpoint() {
     while [ $attempt -lt $max_attempts ]; do
         attempt=$((attempt + 1))
         
-        if curl -s -k -f "$url" > /dev/null 2>&1; then
+        if curl -s -f "$url" > /dev/null 2>&1; then
             write_success "Health endpoint is responding: $url"
-            local response=$(curl -s -k "$url")
+            local response=$(curl -s "$url")
             write_success "Response: $response"
             return 0
         fi
