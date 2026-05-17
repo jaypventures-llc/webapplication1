@@ -12,7 +12,25 @@ Deploy JPVOS as an ASP.NET Core Blazor web app.
 - Release artifact: jpvos-release
 - Hosting target: Azure App Service
 
+## Quick Start
+
+To provision Azure App Service infrastructure, use the provisioning scripts:
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\provision-azure-appservice.ps1 -Path A -SubscriptionId "YOUR-SUBSCRIPTION-ID"
+```
+
+**Linux/macOS (Bash):**
+```bash
+./scripts/provision-azure-appservice.sh -Path A -SubscriptionId "YOUR-SUBSCRIPTION-ID"
+```
+
+See [AZURE-PROVISIONING-GUIDE.md](./AZURE-PROVISIONING-GUIDE.md) for complete instructions.
+
 ## Required Azure Setup
+
+The provisioning scripts automate these steps. If provisioning manually:
 
 - [ ] Azure subscription selected
 - [ ] Resource group created (e.g., `rg-jpv-os-prod`)
