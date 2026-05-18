@@ -6,26 +6,21 @@ azure-publish-profile-*.xml
 
 # Local release artifacts
 release-artifacts/
-
-dist-publish/
-*.bak
-*.bak-*
-dist-static/
-
 dist-publish/
 dist-static/
+publish/
+publish.zip
 
+# Backup and temporary files
 *.bak
 *.bak-*
 
+# Environment and secrets
 .env
 .env.*
-
 appsettings.Production.json
 
-
+# Azure publish profiles
 azure-publish-profile-*.xml
-*.publishsettings
-.ssh/
-id_ed25519*
-.vscode/
+*.PublishProfile
+*.pubxml
