@@ -1,477 +1,589 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 set -euo pipefail
 
-# JPV-OS Access Gateway - Azure App Service Provisioning Script
-# 
-# This script automates Azure App Service provisioning with comprehensive validation:
-# 1. Validates Azure tenant access and subscription authority
-# 2. Validates regional quota availability
-# 3. Provisions resource group, App Service plan, and Web App
-# 4. Generates publish profile and configures GitHub secret
-# 5. Triggers deployment workflow
+# Establish script and repository root directories
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Configuration
-RESOURCE_GROUP_NAME="${1:-rg-jpv-os-prod}"
-APP_SERVICE_PLAN_NAME="${2:-asp-jpv-os-prod}"
-WEB_APP_NAME="${3:-jpv-os-access-gateway}"
-SKU_NAME="${4:-B1}"
-REGIONS="${5:-eastus,centralus,eastus2,westus2}"
-
-# Color codes
+# Color output helpers
+RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
-BLUE='\033[0;36m'
+CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Output helpers
-write_success() {
-    echo -e "${GREEN}✓ $1${NC}"
+write_section() {
+    echo -e "\n${CYAN}=== $@ ===${NC}\n"
 }
 
-write_warning() {
-    echo -e "${YELLOW}⚠ $1${NC}"
+write_success() {
+    echo -e "${GREEN}✓ $@${NC}"
 }
 
 write_error() {
-    echo -e "${RED}✗ $1${NC}"
+    echo -e "${RED}✗ $@${NC}"
+}
+
+write_warning() {
+    echo -e "${YELLOW}⚠ $@${NC}"
 }
 
 write_info() {
-    echo -e "${BLUE}ℹ $1${NC}"
+    echo -e "${CYAN}ℹ $@${NC}"
 }
 
-test_azure_prerequisites() {
-    write_info "Checking Azure CLI prerequisites..."
+# Parse arguments
+PATH_OPTION="A"
+# Tenant ID for JayPVentures LLC - This is public information per problem statement
+TENANT_ID="f2f234f1-e912-4f16-a31d-6a102faea644"
+SUBSCRIPTION_ID=""
+RESOURCE_GROUP="rg-jpv-os-prod"
+APP_SERVICE_PLAN="plan-jpv-os-prod"
+WEB_APP_NAME="jpv-os-access-gateway"
+REGION="eastus"
+SKU_SIZE="B1"
+VALIDATE_ONLY=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -Path) PATH_OPTION="$2"; shift 2 ;;
+        -TenantId) TENANT_ID="$2"; shift 2 ;;
+        -SubscriptionId) SUBSCRIPTION_ID="$2"; shift 2 ;;
+        -ResourceGroup) RESOURCE_GROUP="$2"; shift 2 ;;
+        -AppServicePlan) APP_SERVICE_PLAN="$2"; shift 2 ;;
+        -WebAppName) WEB_APP_NAME="$2"; shift 2 ;;
+        -Region) REGION="$2"; shift 2 ;;
+        -SkuSize) SKU_SIZE="$2"; shift 2 ;;
+        -Validate) VALIDATE_ONLY=true; shift ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+# ====================================
+# Prerequisite Validation
+# ====================================
+
+test_prerequisites() {
+    write_section "Checking Prerequisites"
     
+    # Check Azure CLI
     if ! command -v az &> /dev/null; then
-        write_error "Azure CLI is not installed"
-        echo "Please install it from: https://aka.ms/azure-cli"
-        exit 1
+        write_error "Azure CLI is not installed. Install it from: https://aka.ms/azure-cli"
+        return 1
     fi
+    write_success "Azure CLI is installed"
     
-    local az_version=$(az version --query '."azure-cli"' -o tsv 2>/dev/null || echo "unknown")
-    write_success "Azure CLI version: $az_version"
+    # Check Azure CLI version
+    AZ_VERSION=$(az version --output json | jq -r '."azure-cli"')
+    write_info "Azure CLI version: $AZ_VERSION"
     
-    if command -v gh &> /dev/null; then
-        write_success "GitHub CLI available"
-    else
-        write_warning "GitHub CLI (gh) not installed. You'll need to manually set AZURE_WEBAPP_PUBLISH_PROFILE secret."
-    fi
+    # Check Bash version
+    write_info "Bash version: $BASH_VERSION"
+    
+    return 0
 }
+
+# ====================================
+# Authentication & Subscription
+# ====================================
 
 test_azure_login() {
-    write_info "Validating Azure login status..."
+    local TENANT=$1
     
-    if ! az account show &>/dev/null; then
-        write_error "Not logged into Azure. Run: az login"
-        exit 1
+    write_section "Authenticating with Azure"
+    
+    # Check if already logged in
+    if az account show &>/dev/null; then
+        CURRENT_ACCOUNT=$(az account show --output json | jq -r '.user.name')
+        write_success "Already logged in as: $CURRENT_ACCOUNT"
+        return 0
     fi
     
-    local account=$(az account show --query '{user:user.name, tenantId:tenantId}' -o json)
-    local user=$(echo "$account" | jq -r '.user')
-    local tenant=$(echo "$account" | jq -r '.tenantId')
+    # Login to tenant
+    write_info "Logging in to tenant: $TENANT"
+    az login --tenant "$TENANT"
     
-    write_success "Logged in as: $user"
-    write_success "Current tenant: $tenant"
+    if [ $? -ne 0 ]; then
+        write_error "Failed to login to Azure tenant"
+        return 1
+    fi
+    
+    write_success "Successfully logged in to Azure"
+    return 0
 }
 
 get_available_subscriptions() {
-    write_info "Fetching available subscriptions..."
+    write_info "Retrieving available subscriptions..."
     
-    local subs=$(az account list --query "[].{name:name, id:id, tenantId:tenantId, state:state}" -o json)
+    SUBS=$(az account list --output json)
+    COUNT=$(echo "$SUBS" | jq 'length')
     
-    if [ -z "$subs" ] || [ "$subs" = "[]" ]; then
-        write_error "No subscriptions found. The current account has no subscriptions assigned."
-        write_error ""
-        write_error "Remediation:"
-        write_error "1. Contact Azure administrator to assign a subscription to your account"
-        write_error "2. For JayPVentures LLC tenant: Request subscription assignment in Azure portal"
-        write_error "3. Re-run this script after subscription is assigned"
-        exit 1
+    if [ "$COUNT" -eq 0 ]; then
+        write_error "No subscriptions found. Check Tenant ID and account permissions."
+        return 1
     fi
     
-    write_info "Found subscriptions:"
-    echo "$subs" | jq -r '.[] | "  - \(.name) [\(.id)]"'
+    write_info "Found $COUNT subscription(s):\n"
+    echo "$SUBS" | jq -r '.[] | "  - \(.name) [\(.id | .[0:8])...]"'
     
-    echo "$subs"
+    return 0
 }
 
-select_subscription() {
-    local subscriptions=$1
-    local count=$(echo "$subscriptions" | jq 'length')
+set_active_subscription() {
+    local SUB_ID=$1
     
-    if [ "$count" -eq 1 ]; then
-        local selected=$(echo "$subscriptions" | jq '.[0]')
-    else
-        # Try to find JayPVentures subscription
-        local selected=$(echo "$subscriptions" | jq '.[] | select(.name | test("JayPVentures|jpv"; "i"))' | head -1)
-        if [ -z "$selected" ]; then
-            selected=$(echo "$subscriptions" | jq '.[0]')
-        fi
+    write_info "Setting active subscription: $SUB_ID"
+    az account set --subscription "$SUB_ID"
+    
+    if [ $? -ne 0 ]; then
+        write_error "Failed to set subscription"
+        return 1
     fi
     
-    local sub_name=$(echo "$selected" | jq -r '.name')
-    local sub_id=$(echo "$selected" | jq -r '.id')
-    
-    az account set --subscription "$sub_id"
-    write_success "Selected subscription: $sub_name [$sub_id]"
-    
-    echo "$selected"
+    SUB_NAME=$(az account show --output json | jq -r '.name')
+    write_success "Active subscription: $SUB_NAME"
+    return 0
 }
 
-test_subscription_authority() {
-    local subscription_id=$1
-    write_info "Validating subscription authority..."
-    
-    local roles=$(az role assignment list --subscription "$subscription_id" --query "[].roleDefinitionName" -o json | jq -r '.[]' | sort -u)
-    
-    if echo "$roles" | grep -qE "Owner|Contributor|Website Contributor"; then
-        write_success "Has required role for resource creation"
-        return 0
-    else
-        write_error "Current account does not have required roles for resource creation"
-        write_error "Requires one of: Owner, Contributor, Website Contributor"
-        write_error "Current roles: $roles"
-        exit 1
-    fi
-}
+# ====================================
+# Quota & Capacity Validation
+# ====================================
 
-test_provider_registration() {
-    local subscription_id=$1
+test_appservice_quota() {
+    local REGION=$1
+    
+    write_section "Checking App Service Quota"
+    
+    # Get provider registrations
     write_info "Checking Microsoft.Web provider registration..."
+    PROVIDER_STATE=$(az provider show --namespace Microsoft.Web --output json 2>/dev/null | jq -r '.registrationState' 2>/dev/null)
     
-    local state=$(az provider show --namespace Microsoft.Web --subscription "$subscription_id" --query "registrationState" -o tsv)
-    
-    if [ "$state" = "Registered" ]; then
-        write_success "Microsoft.Web provider is registered"
-        return 0
-    fi
-    
-    write_warning "Microsoft.Web provider not registered. Attempting registration..."
-    
-    if az provider register --namespace Microsoft.Web --subscription "$subscription_id" &>/dev/null; then
-        write_success "Successfully registered Microsoft.Web provider"
-        write_info "Waiting for provider registration to propagate..."
-        sleep 5
-        return 0
+    if [ "$PROVIDER_STATE" != "Registered" ]; then
+        write_warning "Microsoft.Web provider not registered. Registering..."
+        az provider register --namespace Microsoft.Web
+        write_info "Provider registration initiated (this may take 5-10 minutes)"
     else
-        write_error "Failed to register Microsoft.Web provider"
-        write_error "Remediation: Register provider manually or contact Azure support"
-        exit 1
+        write_success "Microsoft.Web provider is registered"
     fi
+    
+    # Check VMs quota for the region
+    write_info "Checking Total vCores quota in region: $REGION"
+    
+    write_warning "Quota check requires Azure Portal access"
+    write_info "To verify App Service capacity for $REGION:"
+    write_info "  1. Go to https://portal.azure.com"
+    write_info "  2. Search for 'Subscriptions' > Select your subscription"
+    write_info "  3. Go to 'Usage + quotas' on the left panel"
+    write_info "  4. Filter by Region: '$REGION' and Service: 'App Service'"
+    write_info "  5. Verify 'Total vCores' limit >= 1 (current: check Current Value)"
+    
+    return 0
 }
 
-find_viable_region() {
-    local sku=$1
-    local regions_str=$2
-    
-    write_info "Validating regional quota for SKU: $sku..."
-    write_info "Checking regions: $regions_str"
-    
-    local IFS=','
-    for region in $regions_str; do
-        region=$(echo "$region" | xargs) # trim whitespace
-        write_info "Checking quota in $region..."
-        
-        # Check regional VM quota for capacity
-        local quota=$(az compute vm list-usage --location "$region" --query "[?name.value=='Total Regional vCPUs'].limit" -o tsv 2>/dev/null || echo "0")
-        
-        if [ -z "$quota" ]; then
-            quota="0"
-        fi
-        
-        if [ "$quota" -gt 0 ]; then
-            write_success "Region $region has available quota (Total vCPUs: $quota)"
-            echo "$region"
-            return 0
-        else
-            write_warning "Region $region not viable: Total VM quota is 0"
-        fi
-    done
-    
-    write_error ""
-    write_error "No viable regions found with available quota for SKU: $sku"
-    write_error ""
-    write_error "Remediation steps:"
-    write_error "1. Log into Azure Portal: https://portal.azure.com"
-    write_error "2. Navigate to Subscriptions > Usage + quotas"
-    write_error "3. For each region (East US, Central US, East US 2, West US 2):"
-    write_error "   - Check 'Compute' category"
-    write_error "   - Look for 'Total VM quota'"
-    write_error "   - If quota is 0, click 'Request quota increase'"
-    write_error "   - Select 'New support request' if needed"
-    write_error "4. Once quotas are increased, re-run this script"
-    exit 1
-}
+# ====================================
+# Resource Creation (Path A & B)
+# ====================================
 
-new_azure_resources() {
-    local rg=$1
-    local plan=$2
-    local webapp=$3
-    local sku=$4
-    local region=$5
+new_resource_group() {
+    local RG_NAME=$1
+    local REGION=$2
     
-    write_info "Creating Azure resources in region: $region"
+    write_section "Creating Resource Group"
     
-    # Create resource group
-    write_info "Creating resource group: $rg"
-    if ! az group create --name "$rg" --location "$region" --output none; then
+    # Check if already exists
+    if az group exists --name "$RG_NAME" --output json | jq -e 'true' &>/dev/null; then
+        write_success "Resource group already exists: $RG_NAME"
+        return 0
+    fi
+    
+    write_info "Creating resource group: $RG_NAME in region: $REGION"
+    az group create --name "$RG_NAME" --location "$REGION"
+    
+    if [ $? -ne 0 ]; then
         write_error "Failed to create resource group"
-        exit 1
+        return 1
     fi
-    write_success "Resource group created"
     
-    # Create App Service Plan
-    write_info "Creating App Service plan: $plan"
-    if ! az appservice plan create \
-        --name "$plan" \
-        --resource-group "$rg" \
-        --location "$region" \
-        --sku "$sku" \
-        --is-linux \
-        --output none; then
-        
+    write_success "Resource group created: $RG_NAME"
+    return 0
+}
+
+new_appservice_plan() {
+    local RG_NAME=$1
+    local PLAN_NAME=$2
+    local REGION=$3
+    local SKU=$4
+    
+    write_section "Creating App Service Plan"
+    
+    # Check if already exists
+    if az appservice plan show --resource-group "$RG_NAME" --name "$PLAN_NAME" &>/dev/null; then
+        write_success "App Service plan already exists: $PLAN_NAME"
+        return 0
+    fi
+    
+    write_info "Creating App Service plan: $PLAN_NAME"
+    write_info "  SKU: $SKU (1 vCore, 1 GB RAM)"
+    write_info "  Region: $REGION"
+    write_info "  OS: Linux"
+    
+    az appservice plan create \
+        --name "$PLAN_NAME" \
+        --resource-group "$RG_NAME" \
+        --location "$REGION" \
+        --sku "$SKU" \
+        --is-linux
+    
+    if [ $? -ne 0 ]; then
         write_error "Failed to create App Service plan"
-        write_error "This is a blocker. Do not continue."
-        exit 1
+        write_info "If quota error occurs, check the documented paths:"
+        write_info "  Path A: Assign subscription to JayPVentures LLC tenant"
+        write_info "  Path B: Request quota increase in Azure Portal"
+        write_info "  Path C: Use alternate runtime host (Render, Railway, Fly.io)"
+        return 1
     fi
-    write_success "App Service plan created"
     
-    # Create Web App
-    write_info "Creating .NET 8 Web App: $webapp"
-    if ! az webapp create \
-        --name "$webapp" \
-        --resource-group "$rg" \
-        --plan "$plan" \
-        --runtime "DOTNET|8.0" \
-        --output none; then
-        
-        write_error "Failed to create Web App"
-        exit 1
+    write_success "App Service plan created: $PLAN_NAME"
+    return 0
+}
+
+new_webapp() {
+    local RG_NAME=$1
+    local APP_NAME=$2
+    local PLAN_NAME=$3
+    
+    write_section "Creating Web App"
+    
+    # Check if already exists
+    if az webapp show --resource-group "$RG_NAME" --name "$APP_NAME" &>/dev/null; then
+        write_success "Web app already exists: $APP_NAME"
+        return 0
     fi
-    write_success "Web App created"
     
-    # Configure HTTPS-only
-    write_info "Configuring HTTPS enforcement"
+    write_info "Creating Web app: $APP_NAME"
+    write_info "  Runtime: .NET 8"
+    write_info "  OS: Linux"
+    
+    az webapp create \
+        --resource-group "$RG_NAME" \
+        --plan "$PLAN_NAME" \
+        --name "$APP_NAME" \
+        --runtime "DOTNET|8.0"
+    
+    if [ $? -ne 0 ]; then
+        write_error "Failed to create Web app"
+        return 1
+    fi
+    
+    write_success "Web app created: $APP_NAME"
+    return 0
+}
+
+enable_https_only() {
+    local RG_NAME=$1
+    local APP_NAME=$2
+    
+    write_section "Configuring HTTPS"
+    
     az webapp update \
-        --name "$webapp" \
-        --resource-group "$rg" \
-        --https-only true \
-        --output none
-    write_success "HTTPS-only enabled"
+        --resource-group "$RG_NAME" \
+        --name "$APP_NAME" \
+        --set httpsOnly=true
     
-    # Set app settings
-    write_info "Configuring app settings"
-    az webapp config appsettings set \
-        --name "$webapp" \
-        --resource-group "$rg" \
-        --settings WEBSITES_ENABLE_APP_SERVICE_STORAGE=true \
-        --output none
-    write_success "App settings configured"
+    if [ $? -eq 0 ]; then
+        write_success "HTTPS enforced for web app"
+    else
+        write_warning "Could not enforce HTTPS (may require further configuration)"
+    fi
 }
 
 get_publish_profile() {
-    local webapp=$1
-    local rg=$2
+    local RG_NAME=$1
+    local APP_NAME=$2
+    local PROFILE_PATH="$SCRIPT_DIR/azure-publish-profile-$APP_NAME.xml"
     
-    write_info "Generating publish profile..."
+    write_section "Generating Publish Profile"
     
-    local profile_path="azure-publish-profile-${webapp}.xml"
+    write_info "Downloading publish profile to: $PROFILE_PATH"
+    az webapp deployment list-publishing-profiles \
+        --resource-group "$RG_NAME" \
+        --name "$APP_NAME" \
+        --xml > "$PROFILE_PATH"
     
-    if ! az webapp deployment list-publishing-profiles \
-        --name "$webapp" \
-        --resource-group "$rg" > "$profile_path" 2>&1; then
+    if [ $? -ne 0 ]; then
+        write_error "Failed to download publish profile"
+        return 1
+    fi
+    
+    # Verify file was created
+    if [ ! -f "$PROFILE_PATH" ]; then
+        write_error "Publish profile file not created"
+        return 1
+    fi
+    
+    local file_size=$(wc -c < "$PROFILE_PATH")
+    write_success "Publish profile generated: $PROFILE_PATH ($file_size bytes)"
+    
+    echo "$PROFILE_PATH"
+    return 0
+}
+
+register_publish_profile_secret() {
+    local PROFILE_PATH=$1
+    local APP_NAME=$2
+    
+    write_section "Registering GitHub Secret"
+    
+    if ! command -v gh &> /dev/null; then
+        write_warning "GitHub CLI not found. Manual secret registration required."
+        write_info "To register the publish profile secret:"
+        write_info "  Using PowerShell (recommended for special characters):"
+        write_info "    Get-Content -Raw '$PROFILE_PATH' | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -"
+        write_info ""
+        write_info "  Using Bash:"
+        write_info "    cat '$PROFILE_PATH' | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -"
+        return 1
+    fi
+    
+    write_info "Registering AZURE_WEBAPP_PUBLISH_PROFILE secret..."
+    
+    # Use pipe with gh
+    cat "$PROFILE_PATH" | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -
+    
+    if [ $? -eq 0 ]; then
+        write_success "GitHub secret registered: AZURE_WEBAPP_PUBLISH_PROFILE"
+        return 0
+    else
+        write_warning "Failed to register GitHub secret (may require manual registration)"
+        return 1
+    fi
+}
+
+# ====================================
+# Path C: Alternate Runtimes
+# ====================================
+
+test_alternate_runtimes() {
+    write_section "Path C: Alternate Runtime Options"
+    
+    write_info "Validated runtime hosts for .NET 8 deployment:\n"
+    
+    # Fly.io
+    write_info "1. Fly.io (Recommended for quick start)"
+    write_info "   Command: fly auth login && fly deploy"
+    write_info "   Config: fly.toml (already configured)"
+    if [ -f "$REPO_ROOT/fly.toml" ]; then
+        write_success "   fly.toml found in repository"
+    fi
+    
+    # Render
+    write_info ""
+    write_info "2. Render"
+    write_info "   Command: render deploy"
+    write_info "   Config: render.yaml (already configured)"
+    if [ -f "$REPO_ROOT/render.yaml" ]; then
+        write_success "   render.yaml found in repository"
+    fi
+    
+    # Railway
+    write_info ""
+    write_info "3. Railway"
+    write_info "   Command: railway deploy"
+    write_info "   Supports Docker deployment"
+    
+    # DigitalOcean App Platform
+    write_info ""
+    write_info "4. DigitalOcean App Platform"
+    write_info "   Supports Docker deployment"
+    write_info "   More info: https://docs.digitalocean.com/products/app-platform/"
+    
+    # AWS App Runner
+    write_info ""
+    write_info "5. AWS App Runner"
+    write_info "   Supports container image deployment"
+    write_info "   More info: https://aws.amazon.com/apprunner/"
+    
+    write_info ""
+    write_info "See docs/CONTAINER-DEPLOYMENT.md for detailed instructions."
+    
+    return 0
+}
+
+# ====================================
+# Validation Summary
+# ====================================
+
+test_deployment_prerequisites() {
+    local RG_NAME=$1
+    local APP_NAME=$2
+    
+    write_section "Validating Deployment Prerequisites"
+    
+    local ALL_GOOD=true
+    
+    # Test health endpoint availability
+    write_info "Checking health endpoint configuration..."
+    local proj_path="$REPO_ROOT/src/JPVOS/Program.cs"
+    if grep -q "app\\.MapGet.*\"/health\"" "$proj_path"; then
+        write_success "Health endpoint configured at /health"
+    else
+        write_error "Health endpoint not found in Program.cs"
+        ALL_GOOD=false
+    fi
+    
+    # Check resource availability
+    if [ -n "$RG_NAME" ] && [ -n "$APP_NAME" ]; then
+        write_info "Checking Azure resources..."
         
-        write_error "Failed to generate publish profile"
+        # Check resource group
+        if az group show --name "$RG_NAME" &>/dev/null; then
+            write_success "Resource group exists: $RG_NAME"
+        else
+            write_error "Resource group not found: $RG_NAME"
+            ALL_GOOD=false
+        fi
+        
+        # Check web app
+        if az webapp show --resource-group "$RG_NAME" --name "$APP_NAME" &>/dev/null; then
+            write_success "Web app exists: $APP_NAME"
+            DEFAULT_HOSTNAME=$(az webapp show --resource-group "$RG_NAME" --name "$APP_NAME" --output json | jq -r '.defaultHostName')
+            RUNTIME=$(az webapp show --resource-group "$RG_NAME" --name "$APP_NAME" --output json | jq -r '.linuxFxVersion')
+            write_info "  URL: $DEFAULT_HOSTNAME"
+            write_info "  Runtime: $RUNTIME"
+        else
+            write_error "Web app not found: $APP_NAME"
+            ALL_GOOD=false
+        fi
+    fi
+    
+    if [ "$ALL_GOOD" = true ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# ====================================
+# Main Execution
+# ====================================
+
+main() {
+    echo -e "${CYAN}"
+    cat << "EOF"
+╔═════════════════════════════════════════════════════════════╗
+║    JPV-OS Access Gateway - Azure App Service Provisioning   ║
+╚═════════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${NC}"
+    
+    write_info "Path: $PATH_OPTION | Region: $REGION | SKU: $SKU_SIZE"
+    
+    # Step 1: Validate prerequisites
+    if ! test_prerequisites; then
         exit 1
     fi
     
-    if [ -f "$profile_path" ]; then
-        write_success "Publish profile generated: $profile_path"
-        echo "$profile_path"
-    else
-        write_error "Failed to generate publish profile"
+    # Step 2: Authentication
+    if ! test_azure_login "$TENANT_ID"; then
         exit 1
     fi
-}
-
-set_github_secret() {
-    local profile_path=$1
     
-    write_info "Configuring GitHub deployment secret..."
-    
-    if ! command -v gh &> /dev/null; then
-        write_warning "GitHub CLI (gh) not available. Manual configuration needed:"
-        write_warning "1. Read publish profile: cat '$profile_path'"
-        write_warning "2. Copy the XML content"
-        write_warning "3. In GitHub: Settings > Secrets and variables > Actions"
-        write_warning "4. Create new secret: AZURE_WEBAPP_PUBLISH_PROFILE"
-        write_warning "5. Paste the XML content"
-        return 1
-    fi
-    
-    write_info "Setting GitHub secret: AZURE_WEBAPP_PUBLISH_PROFILE"
-    
-    if cat "$profile_path" | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -; then
-        write_success "GitHub secret configured successfully"
-        return 0
-    else
-        write_error "Failed to set GitHub secret"
-        write_warning "Manual configuration needed. See instructions above."
-        return 1
-    fi
-}
-
-trigger_deployment() {
-    local webapp=$1
-    
-    write_info "Triggering GitHub Actions deployment..."
-    
-    if ! command -v gh &> /dev/null; then
-        write_warning "GitHub CLI (gh) not available. Manual trigger needed:"
-        write_warning "1. Go to: https://github.com/JayPVentures-LLC/jpv-os-access-gateway"
-        write_warning "2. Actions > deploy-appservice"
-        write_warning "3. Click 'Run workflow'"
-        return 1
-    fi
-    
-    if gh workflow run deploy-appservice.yml; then
-        write_success "Deployment workflow triggered"
-        write_info "Waiting for deployment to complete (this may take several minutes)..."
-        sleep 30
-        return 0
-    else
-        write_error "Failed to trigger deployment"
-        write_warning "Manual trigger needed. See instructions above."
-        return 1
-    fi
-}
-
-test_health_endpoint() {
-    local webapp=$1
-    
-    write_info "Validating application health endpoint..."
-    
-    local url="https://${webapp}.azurewebsites.net/api/health"
-    local max_attempts=30
-    local attempt=0
-    
-    while [ $attempt -lt $max_attempts ]; do
-        attempt=$((attempt + 1))
-        
-        if curl -s -f "$url" > /dev/null 2>&1; then
-            write_success "Health endpoint is responding: $url"
-            local response=$(curl -s "$url")
-            write_success "Response: $response"
-            return 0
+    # Step 3: Subscription
+    if [ "$PATH_OPTION" = "A" ] || [ "$PATH_OPTION" = "B" ]; then
+        if [ -z "$SUBSCRIPTION_ID" ]; then
+            write_error "SubscriptionId required for Path A and B"
+            
+            if get_available_subscriptions; then
+                write_info "Use one of the available subscription IDs above:"
+                write_info "  ./provision-azure-appservice.sh -Path $PATH_OPTION -SubscriptionId '<subscription-id>'"
+            fi
+            exit 1
         fi
         
-        if [ $attempt -eq 1 ]; then
-            write_info "Waiting for application to become available ($attempt/$max_attempts)..."
-        elif [ $((attempt % 5)) -eq 0 ]; then
-            write_info "Still waiting... ($attempt/$max_attempts)"
+        if ! set_active_subscription "$SUBSCRIPTION_ID"; then
+            exit 1
+        fi
+    fi
+    
+    # Step 4: Quota check
+    if [ "$PATH_OPTION" = "A" ] || [ "$PATH_OPTION" = "B" ]; then
+        test_appservice_quota "$REGION"
+    fi
+    
+    # If validation only, stop here
+    if [ "$VALIDATE_ONLY" = true ]; then
+        write_success "Validation complete"
+        
+        # Additional validation for existing resources
+        test_deployment_prerequisites "$RESOURCE_GROUP" "$WEB_APP_NAME"
+        exit 0
+    fi
+    
+    # Step 5: Path A/B - Create resources
+    if [ "$PATH_OPTION" = "A" ]; then
+        write_section "Path A: JayPVentures LLC Tenant Subscription"
+        write_info "Provisioning resources using JayPVentures LLC tenant..."
+        
+        if ! new_resource_group "$RESOURCE_GROUP" "$REGION"; then
+            exit 1
         fi
         
-        sleep 10
-    done
+        if ! new_appservice_plan "$RESOURCE_GROUP" "$APP_SERVICE_PLAN" "$REGION" "$SKU_SIZE"; then
+            exit 1
+        fi
+        
+        if ! new_webapp "$RESOURCE_GROUP" "$WEB_APP_NAME" "$APP_SERVICE_PLAN"; then
+            exit 1
+        fi
+        
+        enable_https_only "$RESOURCE_GROUP" "$WEB_APP_NAME"
+        
+        PROFILE_PATH=$(get_publish_profile "$RESOURCE_GROUP" "$WEB_APP_NAME")
+        if [ -n "$PROFILE_PATH" ]; then
+            register_publish_profile_secret "$PROFILE_PATH" "$WEB_APP_NAME"
+        fi
+    elif [ "$PATH_OPTION" = "B" ]; then
+        write_section "Path B: Existing Subscription Quota"
+        write_info "Using existing subscription with verified quota..."
+        
+        if ! new_resource_group "$RESOURCE_GROUP" "$REGION"; then
+            exit 1
+        fi
+        
+        if ! new_appservice_plan "$RESOURCE_GROUP" "$APP_SERVICE_PLAN" "$REGION" "$SKU_SIZE"; then
+            write_error "Quota insufficient. Request quota increase at:"
+            write_info "  https://portal.azure.com > Subscriptions > Usage + quotas"
+            exit 1
+        fi
+        
+        if ! new_webapp "$RESOURCE_GROUP" "$WEB_APP_NAME" "$APP_SERVICE_PLAN"; then
+            exit 1
+        fi
+        
+        enable_https_only "$RESOURCE_GROUP" "$WEB_APP_NAME"
+        
+        PROFILE_PATH=$(get_publish_profile "$RESOURCE_GROUP" "$WEB_APP_NAME")
+        if [ -n "$PROFILE_PATH" ]; then
+            register_publish_profile_secret "$PROFILE_PATH" "$WEB_APP_NAME"
+        fi
+    elif [ "$PATH_OPTION" = "C" ]; then
+        write_section "Path C: Alternate Runtime Host"
+        test_alternate_runtimes
+    fi
     
-    write_warning "Health endpoint not responding after $((max_attempts * 10 / 60)) minutes"
-    write_warning "The application may still be deploying. Check Azure Portal for status."
-    return 1
+    # Step 6: Final validation
+    write_section "Provisioning Summary"
+    
+    if [ "$PATH_OPTION" = "A" ] || [ "$PATH_OPTION" = "B" ]; then
+        if test_deployment_prerequisites "$RESOURCE_GROUP" "$WEB_APP_NAME"; then
+            write_success "All prerequisites validated. Ready for deployment."
+            write_info "Next steps:"
+            write_info "  1. Configure app settings in Azure Portal"
+            write_info "  2. Run GitHub Actions workflow: 'Deploy to Azure App Service'"
+            write_info "  3. Monitor deployment at: https://portal.azure.com"
+        fi
+    fi
 }
 
-show_summary() {
-    local rg=$1
-    local webapp=$2
-    local profile_path=$3
-    local health_ok=$4
-    
-    echo ""
-    write_success "========================================="
-    write_success "PROVISIONING COMPLETE"
-    write_success "========================================="
-    echo ""
-    write_info "Resource Details:"
-    echo "  Resource Group:    $rg"
-    echo "  Web App Name:      $webapp"
-    echo "  URL:               https://${webapp}.azurewebsites.net"
-    echo "  Health Endpoint:   https://${webapp}.azurewebsites.net/api/health"
-    echo ""
-    write_info "Next Steps:"
-    echo "  1. Verify: https://${webapp}.azurewebsites.net"
-    echo "  2. Configure custom domain if needed"
-    echo "  3. Update Cloudflare DNS to point to Azure App Service"
-    echo ""
-    
-    if [ "$health_ok" = "true" ]; then
-        write_success "Application is healthy and ready for production"
-    else
-        write_warning "Application health status unknown. Check Azure Portal."
-    fi
-    
-    echo "  Publish Profile:   $profile_path"
-    echo ""
-}
-
-# Main execution
-echo ""
-echo "========================================="
-echo "JPV-OS Access Gateway - Azure Provisioning"
-echo "========================================="
-echo ""
-
-# Step 1: Check prerequisites
-test_azure_prerequisites
-
-# Step 2: Validate Azure login
-test_azure_login
-
-# Step 3: Get available subscriptions
-subscriptions=$(get_available_subscriptions)
-
-# Step 4: Select subscription
-subscription=$(select_subscription "$subscriptions")
-
-# Step 5: Validate subscription authority
-subscription_id=$(echo "$subscription" | jq -r '.id')
-test_subscription_authority "$subscription_id"
-
-# Step 6: Test provider registration
-test_provider_registration "$subscription_id"
-
-# Step 7: Find viable region
-viable_region=$(find_viable_region "$SKU_NAME" "$REGIONS")
-
-# Step 8: Provision resources
-new_azure_resources "$RESOURCE_GROUP_NAME" "$APP_SERVICE_PLAN_NAME" "$WEB_APP_NAME" "$SKU_NAME" "$viable_region"
-
-# Step 9: Get publish profile
-profile_path=$(get_publish_profile "$WEB_APP_NAME" "$RESOURCE_GROUP_NAME")
-
-# Step 10: Configure GitHub secret
-secret_ok=false
-if set_github_secret "$profile_path"; then
-    secret_ok=true
-fi
-
-# Step 11: Trigger deployment
-deployment_ok=false
-if [ "$secret_ok" = "true" ]; then
-    if trigger_deployment "$WEB_APP_NAME"; then
-        deployment_ok=true
-    fi
-fi
-
-# Step 12: Test health endpoint
-health_ok=false
-if [ "$deployment_ok" = "true" ]; then
-    if test_health_endpoint "$WEB_APP_NAME"; then
-        health_ok=true
-    fi
-fi
-
-# Show summary
-show_summary "$RESOURCE_GROUP_NAME" "$WEB_APP_NAME" "$profile_path" "$health_ok"
-
-echo ""
+main

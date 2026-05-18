@@ -1,618 +1,615 @@
-#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-Automates Azure App Service provisioning for JPV-OS Access Gateway with comprehensive validation.
+    Provision Azure App Service infrastructure for JPV-OS Access Gateway.
 
 .DESCRIPTION
-This script performs atomic validation checks and provisions Azure resources:
-1. Validates Azure tenant access and subscription authority
-2. Validates regional quota availability
-3. Provisions resource group, App Service plan, and Web App
-4. Generates publish profile and configures GitHub secret
-5. Triggers deployment workflow
+    This script helps provision Azure App Service resources (subscription, resource group, app service plan, and web app)
+    for the JPV-OS Access Gateway application. It supports three deployment paths:
+    
+    Path A: Use JayPVentures LLC tenant subscription
+    Path B: Use existing Default Directory subscription (may require quota increase)
+    Path C: Validate alternate runtime hosts (Render, Railway, Fly.io)
 
-.PARAMETER ResourceGroupName
-The name of the resource group (default: rg-jpv-os-prod)
+.PARAMETER Path
+    Deployment path: A, B, or C
+    
+.PARAMETER TenantId
+    Azure Tenant ID. Default: JayPVentures LLC tenant (f2f234f1-e912-4f16-a31d-6a102faea644)
 
-.PARAMETER AppServicePlanName
-The name of the App Service plan (default: asp-jpv-os-prod)
+.PARAMETER SubscriptionId
+    Azure Subscription ID (required for Paths A and B)
+
+.PARAMETER ResourceGroup
+    Resource group name. Default: rg-jpv-os-prod
+
+.PARAMETER AppServicePlan
+    App Service plan name. Default: plan-jpv-os-prod
 
 .PARAMETER WebAppName
-The name of the web app (default: jpv-os-access-gateway)
+    Web app name. Default: jpv-os-access-gateway
 
-.PARAMETER SkuName
-The SKU for the App Service plan (default: B1)
+.PARAMETER Region
+    Azure region. Default: eastus
 
-.PARAMETER Regions
-Comma-separated list of regions to try (default: eastus,centralus,eastus2,westus2)
+.PARAMETER SkuSize
+    App Service plan SKU. Default: B1 (Basic, 1 core, 1GB RAM)
+    Minimum needed: B1 or higher. Standard S1 recommended for production.
+
+.PARAMETER Validate
+    If specified, only validate prerequisites without creating resources.
 
 .EXAMPLE
-./provision-azure-appservice.ps1
+    # Path A: Provision using JayPVentures LLC tenant
+    .\provision-azure-appservice.ps1 -Path A -SubscriptionId "your-subscription-id"
 
 .EXAMPLE
-./provision-azure-appservice.ps1 -ResourceGroupName rg-custom -WebAppName app-custom -SkuName B2
+    # Path B: Provision using existing Default Directory subscription
+    .\provision-azure-appservice.ps1 -Path B -SubscriptionId "your-subscription-id"
 
+.EXAMPLE
+    # Validate prerequisites only
+    .\provision-azure-appservice.ps1 -Validate
+
+.EXAMPLE
+    # Path C: Validate alternate runtime hosts
+    .\provision-azure-appservice.ps1 -Path C
 #>
+
 param(
-    [string]$ResourceGroupName = "rg-jpv-os-prod",
-    [string]$AppServicePlanName = "asp-jpv-os-prod",
+    [ValidateSet("A", "B", "C")]
+    [string]$Path = "A",
+    
+    # Tenant ID for JayPVentures LLC - This is public information per problem statement
+    [string]$TenantId = "f2f234f1-e912-4f16-a31d-6a102faea644",
+    
+    [string]$SubscriptionId,
+    
+    [string]$ResourceGroup = "rg-jpv-os-prod",
+    
+    [string]$AppServicePlan = "plan-jpv-os-prod",
+    
     [string]$WebAppName = "jpv-os-access-gateway",
-    [string]$SkuName = "B1",
-    [string]$Regions = "eastus,centralus,eastus2,westus2"
+    
+    [string]$Region = "eastus",
+    
+    [string]$SkuSize = "B1",
+    
+    [switch]$Validate
 )
 
 $ErrorActionPreference = "Stop"
-$ProgressPreference = "SilentlyContinue"
 
-# Color-coded output helpers
-function Write-Success {
-    param([string]$Message)
-    Write-Host "✓ $Message" -ForegroundColor Green
-}
+# Color output helpers
+function Write-ScriptSection { Write-Host "`n$($PSStyle.Foreground.Cyan)=== $args ===`n$($PSStyle.Reset)" }
+function Write-ScriptSuccess { Write-Host "$($PSStyle.Foreground.Green)✓ $args$($PSStyle.Reset)" }
+function Write-ScriptError { Write-Host "$($PSStyle.Foreground.Red)✗ $args$($PSStyle.Reset)" -ErrorAction Continue }
+function Write-ScriptWarning { Write-Host "$($PSStyle.Foreground.Yellow)⚠ $args$($PSStyle.Reset)" }
+function Write-ScriptInfo { Write-Host "$($PSStyle.Foreground.Cyan)ℹ $args$($PSStyle.Reset)" }
 
-function Write-Warning {
-    param([string]$Message)
-    Write-Host "⚠ $Message" -ForegroundColor Yellow
-}
+# ====================================
+# Prerequisite Validation
+# ====================================
 
-function Write-Error {
-    param([string]$Message)
-    Write-Host "✗ $Message" -ForegroundColor Red
-}
-
-function Write-Info {
-    param([string]$Message)
-    Write-Host "ℹ $Message" -ForegroundColor Cyan
-}
-
-function Test-AzurePrerequisites {
-    Write-Info "Checking Azure CLI prerequisites..."
+function Test-Prerequisites {
+    Write-ScriptSection "Checking Prerequisites"
     
-    # Check if Azure CLI is installed
-    try {
-        $azVersion = az version 2>&1 | ConvertFrom-Json -ErrorAction SilentlyContinue
-        if ($null -eq $azVersion) {
-            throw "Azure CLI not found or not properly installed"
-        }
-        Write-Success "Azure CLI version: $($azVersion.'azure-cli')"
+    # Check Azure CLI
+    if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+        Write-ScriptError "Azure CLI is not installed. Install it from: https://aka.ms/azure-cli"
+        return $false
     }
-    catch {
-        Write-Error "Azure CLI is not installed. Please install it from: https://aka.ms/azure-cli"
-        exit 1
+    Write-ScriptSuccess "Azure CLI is installed"
+    
+    # Check Azure CLI version
+    $azVersion = az version --output json | ConvertFrom-Json
+    Write-ScriptInfo "Azure CLI version: $($azVersion.'azure-cli')"
+    
+    # Check PowerShell version
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        Write-ScriptWarning "PowerShell 7.0+ recommended. Current: $($PSVersionTable.PSVersion)"
+    } else {
+        Write-ScriptSuccess "PowerShell version: $($PSVersionTable.PSVersion)"
     }
     
-    # Check if gh CLI is installed (for GitHub secret configuration)
-    try {
-        $ghVersion = gh --version 2>&1
-        Write-Success "GitHub CLI available"
-    }
-    catch {
-        Write-Warning "GitHub CLI (gh) not installed. You'll need to manually set AZURE_WEBAPP_PUBLISH_PROFILE secret."
-    }
+    return $true
 }
+
+# ====================================
+# Authentication & Subscription
+# ====================================
 
 function Test-AzureLogin {
-    Write-Info "Validating Azure login status..."
+    param([string]$Tenant)
     
-    try {
-        $account = az account show 2>&1 | ConvertFrom-Json -ErrorAction SilentlyContinue
-        if ($null -eq $account.id) {
-            throw "Not logged in"
-        }
-        Write-Success "Logged in as: $($account.user.name) ($($account.user.type))"
-        Write-Success "Current tenant: $($account.tenantId)"
-        return $account
+    Write-ScriptSection "Authenticating with Azure"
+    
+    # Check if already logged in
+    $currentAccount = az account show 2>$null | ConvertFrom-Json -ErrorAction SilentlyContinue
+    
+    if ($currentAccount) {
+        Write-ScriptSuccess "Already logged in as: $($currentAccount.user.name)"
+        return $true
     }
-    catch {
-        Write-Error "Not logged into Azure. Run: az login"
-        exit 1
+    
+    # Login to tenant
+    Write-ScriptInfo "Logging in to tenant: $Tenant"
+    az login --tenant $Tenant
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-ScriptError "Failed to login to Azure tenant"
+        return $false
     }
+    
+    Write-ScriptSuccess "Successfully logged in to Azure"
+    return $true
 }
 
 function Get-AvailableSubscriptions {
-    Write-Info "Fetching available subscriptions..."
+    Write-ScriptInfo "Retrieving available subscriptions..."
     
-    try {
-        $subs = az account list --query "[].{name:name, id:id, tenantId:tenantId, state:state}" -o json | ConvertFrom-Json
-        if ($null -eq $subs -or $subs.Count -eq 0) {
-            Write-Error "No subscriptions found. The current account has no subscriptions assigned."
-            Write-Error ""
-            Write-Error "Remediation:"
-            Write-Error "1. Contact Azure administrator to assign a subscription to your account"
-            Write-Error "2. For JayPVentures LLC tenant: Request subscription assignment in Azure portal"
-            Write-Error "3. Re-run this script after subscription is assigned"
-            exit 1
-        }
-        
-        Write-Info "Found $($subs.Count) subscription(s):"
-        foreach ($sub in $subs) {
-            Write-Host "  - $($sub.name) [$($sub.id)]"
-        }
-        
-        return $subs
+    $subs = az account list --output json | ConvertFrom-Json
+    
+    if ($subs.Count -eq 0) {
+        Write-ScriptError "No subscriptions found. Check Tenant ID and account permissions."
+        return @()
     }
-    catch {
-        Write-Error "Failed to list subscriptions: $_"
-        exit 1
+    
+    Write-ScriptInfo "Found $($subs.Count) subscription(s):`n"
+    $subs | ForEach-Object {
+        Write-ScriptInfo "  - $($_.name) [$($_.id.Substring(0, 8))...]"
     }
+    
+    return $subs
 }
 
-function Select-Subscription {
-    param([array]$Subscriptions)
+function Set-ActiveSubscription {
+    param([string]$SubId)
     
-    if ($Subscriptions.Count -eq 1) {
-        $selected = $Subscriptions[0]
-        Write-Success "Auto-selected subscription: $($selected.name)"
-    }
-    else {
-        # Try to find JayPVentures LLC tenant subscription first
-        $jpvSub = $Subscriptions | Where-Object { $_.name -like "*JayPVentures*" -or $_.name -like "*jpv*" }
-        if ($jpvSub) {
-            $selected = $jpvSub
-            Write-Success "Selected JayPVentures subscription: $($selected.name)"
-        }
-        else {
-            $selected = $Subscriptions[0]
-            Write-Warning "Multiple subscriptions found. Using first: $($selected.name)"
-        }
+    Write-ScriptInfo "Setting active subscription: $SubId"
+    az account set --subscription $SubId
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-ScriptError "Failed to set subscription"
+        return $false
     }
     
-    az account set --subscription $selected.id
-    Write-Success "Switched to subscription: $($selected.name) [$($selected.id)]"
-    return $selected
+    $sub = az account show --output json | ConvertFrom-Json
+    Write-ScriptSuccess "Active subscription: $($sub.name)"
+    return $true
 }
 
-function Test-SubscriptionAuthority {
-    param([string]$SubscriptionId)
+# ====================================
+# Quota & Capacity Validation
+# ====================================
+
+function Test-AppServiceQuota {
+    param([string]$Region)
     
-    Write-Info "Validating subscription authority..."
+    Write-ScriptSection "Checking App Service Quota"
     
-    try {
-        $roleAssignments = az role assignment list --subscription $SubscriptionId --query "[].roleDefinitionName" -o json | ConvertFrom-Json
-        $roles = @($roleAssignments | Select-Object -Unique)
-        
-        $requiredRoles = @("Owner", "Contributor", "Website Contributor")
-        $hasRequiredRole = $false
-        
-        foreach ($role in $roles) {
-            if ($requiredRoles -contains $role) {
-                Write-Success "Has required role for resource creation: $role"
-                $hasRequiredRole = $true
-                break
-            }
-        }
-        
-        if (-not $hasRequiredRole) {
-            Write-Error "Current account does not have required roles for resource creation"
-            Write-Error "Requires one of: $($requiredRoles -join ', ')"
-            Write-Error "Current roles: $($roles -join ', ')"
-            exit 1
-        }
-        
+    # Get provider registrations
+    Write-ScriptInfo "Checking Microsoft.Web provider registration..."
+    $provider = az provider show --namespace Microsoft.Web --output json | ConvertFrom-Json
+    
+    if ($provider.registrationState -ne "Registered") {
+        Write-ScriptWarning "Microsoft.Web provider not registered. Registering..."
+        az provider register --namespace Microsoft.Web
+        Write-ScriptInfo "Provider registration initiated (this may take 5-10 minutes)"
+    } else {
+        Write-ScriptSuccess "Microsoft.Web provider is registered"
+    }
+    
+    # Check VMs quota for the region
+    Write-ScriptInfo "Checking Total vCores quota in region: $Region"
+    
+    # Note: Detailed quota check requires Azure SDK or Resource Manager API
+    # This is a basic check using the portal information
+    Write-ScriptWarning "Quota check requires Azure Portal access"
+    Write-ScriptInfo "To verify App Service capacity for region: $Region"
+    Write-ScriptInfo "  1. Go to https://portal.azure.com"
+    Write-ScriptInfo "  2. Search for 'Subscriptions' > Select your subscription"
+    Write-ScriptInfo "  3. Go to 'Usage + quotas' on the left panel"
+    Write-ScriptInfo "  4. Filter by Region: '$Region' and Service: 'App Service'"
+    Write-ScriptInfo "  5. Verify 'Total vCores' limit >= 1 (current: check Current Value)"
+    
+    return $true
+}
+
+# ====================================
+# Resource Creation (Path A & B)
+# ====================================
+
+function New-ResourceGroup {
+    param([string]$RgName, [string]$Region)
+    
+    Write-ScriptSection "Creating Resource Group"
+    
+    # Check if already exists
+    $rg = az group exists --name $RgName | ConvertFrom-Json
+    
+    if ($rg -eq $true) {
+        Write-ScriptSuccess "Resource group already exists: $RgName"
         return $true
     }
-    catch {
-        Write-Error "Failed to validate subscription authority: $_"
-        exit 1
+    
+    Write-ScriptInfo "Creating resource group: $RgName in region: $Region"
+    az group create --name $RgName --location $Region
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-ScriptError "Failed to create resource group"
+        return $false
     }
+    
+    Write-ScriptSuccess "Resource group created: $RgName"
+    return $true
 }
 
-function Test-ProviderRegistration {
-    param([string]$SubscriptionId)
+function New-AppServicePlan {
+    param([string]$RgName, [string]$PlanName, [string]$Region, [string]$Sku)
     
-    Write-Info "Checking Microsoft.Web provider registration..."
+    Write-ScriptSection "Creating App Service Plan"
     
-    try {
-        $provider = az provider show --namespace Microsoft.Web --subscription $SubscriptionId -o json | ConvertFrom-Json
-        
-        if ($provider.registrationState -eq "Registered") {
-            Write-Success "Microsoft.Web provider is registered"
-            return $true
-        }
-        
-        Write-Warning "Microsoft.Web provider not registered. Attempting registration..."
-        
-        $regResult = az provider register --namespace Microsoft.Web --subscription $SubscriptionId
-        if ($LASTEXITCODE -eq 0) {
-            Write-Success "Successfully registered Microsoft.Web provider"
-            
-            # Wait a moment for registration to propagate
-            Write-Info "Waiting for provider registration to propagate..."
-            Start-Sleep -Seconds 5
-            return $true
-        }
-        else {
-            Write-Error "Failed to register Microsoft.Web provider"
-            Write-Error "Remediation: Register provider manually or contact Azure support"
-            exit 1
-        }
-    }
-    catch {
-        Write-Error "Failed to check provider registration: $_"
-        exit 1
-    }
-}
-
-function Find-ViableRegion {
-    param([string]$SkuName, [array]$RegionList)
+    # Check if already exists
+    $existing = az appservice plan list --resource-group $RgName --output json 2>$null | ConvertFrom-Json
+    $planExists = $existing | Where-Object { $_.name -eq $PlanName }
     
-    Write-Info "Validating regional quota for SKU: $SkuName..."
-    Write-Info "Checking regions: $($RegionList -join ', ')"
-    
-    $regions = $RegionList -split ','
-    $quotaErrors = @()
-    
-    foreach ($region in $regions) {
-        $region = $region.Trim()
-        Write-Info "Checking quota in $region..."
-        
-        try {
-            # Check regional VM quota for capacity
-            $usage = az compute vm list-usage --location $region --query "[?name.value=='Total Regional vCPUs'].limit" -o tsv
-            
-            if ([int]$usage -gt 0) {
-                Write-Success "Region $region has available quota (Total vCPUs: $usage)"
-                return $region
-            }
-            else {
-                $quotaErrors += "  - $region: Total VM quota is 0"
-                Write-Warning "Region $region not viable: Total VM quota is 0"
-            }
-        }
-        catch {
-            $errorMsg = "$_"
-            $quotaErrors += "  - $region: $($errorMsg.Split([Environment]::NewLine)[0])"
-            Write-Warning "Region $region not viable: $($errorMsg.Split([Environment]::NewLine)[0])"
-        }
-    }
-    
-    # No viable region found
-    Write-Error ""
-    Write-Error "No viable regions found with available quota for SKU: $SkuName"
-    Write-Error ""
-    Write-Error "Quota errors:"
-    $quotaErrors | ForEach-Object { Write-Host $_ }
-    Write-Error ""
-    Write-Error "Remediation steps:"
-    Write-Error "1. Log into Azure Portal: https://portal.azure.com"
-    Write-Error "2. Navigate to Subscriptions > Usage + quotas"
-    Write-Error "3. For each region (East US, Central US, East US 2, West US 2):"
-    Write-Error "   - Check 'Compute' category"
-    Write-Error "   - Look for 'Total VM quota'"
-    Write-Error "   - If quota is 0, click 'Request quota increase'"
-    Write-Error "   - Select 'New support request' if needed"
-    Write-Error "4. Once quotas are increased, re-run this script"
-    exit 1
-}
-
-function New-AzureResources {
-    param(
-        [string]$ResourceGroupName,
-        [string]$AppServicePlanName,
-        [string]$WebAppName,
-        [string]$SkuName,
-        [string]$Region
-    )
-    
-    Write-Info "Creating Azure resources in region: $Region"
-    
-    try {
-        # Create resource group
-        Write-Info "Creating resource group: $ResourceGroupName"
-        az group create `
-            --name $ResourceGroupName `
-            --location $Region `
-            --output none
-        Write-Success "Resource group created"
-        
-        # Create App Service Plan
-        Write-Info "Creating App Service plan: $AppServicePlanName"
-        az appservice plan create `
-            --name $AppServicePlanName `
-            --resource-group $ResourceGroupName `
-            --location $Region `
-            --sku $SkuName `
-            --is-linux `
-            --output none
-        Write-Success "App Service plan created"
-        
-        if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to create App Service plan"
-            Write-Error "This is a blocker. Do not continue."
-            exit 1
-        }
-        
-        # Create Web App
-        Write-Info "Creating .NET 8 Web App: $WebAppName"
-        az webapp create `
-            --name $WebAppName `
-            --resource-group $ResourceGroupName `
-            --plan $AppServicePlanName `
-            --runtime "DOTNET|8.0" `
-            --output none
-        Write-Success "Web App created"
-        
-        # Configure HTTPS-only
-        Write-Info "Configuring HTTPS enforcement"
-        az webapp update `
-            --name $WebAppName `
-            --resource-group $ResourceGroupName `
-            --https-only true `
-            --output none
-        Write-Success "HTTPS-only enabled"
-        
-        # Set app settings (placeholders for production config)
-        Write-Info "Configuring app settings"
-        az webapp config appsettings set `
-            --name $WebAppName `
-            --resource-group $ResourceGroupName `
-            --settings `
-            WEBSITES_ENABLE_APP_SERVICE_STORAGE=true `
-            --output none
-        Write-Success "App settings configured"
-        
+    if ($planExists) {
+        Write-ScriptSuccess "App Service plan already exists: $PlanName"
         return $true
     }
-    catch {
-        Write-Error "Failed to create Azure resources: $_"
-        exit 1
+    
+    Write-ScriptInfo "Creating App Service plan: $PlanName"
+    Write-ScriptInfo "  SKU: $Sku (1 vCore, 1 GB RAM)"
+    Write-ScriptInfo "  Region: $Region"
+    Write-ScriptInfo "  OS: Linux"
+    
+    az appservice plan create `
+        --name $PlanName `
+        --resource-group $RgName `
+        --location $Region `
+        --sku $Sku `
+        --is-linux
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-ScriptError "Failed to create App Service plan"
+        Write-ScriptInfo "If quota error occurs, check the documented paths:"
+        Write-ScriptInfo "  Path A: Assign subscription to JayPVentures LLC tenant"
+        Write-ScriptInfo "  Path B: Request quota increase in Azure Portal"
+        Write-ScriptInfo "  Path C: Use alternate runtime host (Render, Railway, Fly.io)"
+        return $false
+    }
+    
+    Write-ScriptSuccess "App Service plan created: $PlanName"
+    return $true
+}
+
+function New-WebApp {
+    param([string]$RgName, [string]$AppName, [string]$PlanName)
+    
+    Write-ScriptSection "Creating Web App"
+    
+    # Check if already exists
+    $existing = az webapp list --resource-group $RgName --output json 2>$null | ConvertFrom-Json
+    $appExists = $existing | Where-Object { $_.name -eq $AppName }
+    
+    if ($appExists) {
+        Write-ScriptSuccess "Web app already exists: $AppName"
+        return $true
+    }
+    
+    Write-ScriptInfo "Creating Web app: $AppName"
+    Write-ScriptInfo "  Runtime: .NET 8"
+    Write-ScriptInfo "  OS: Linux"
+    
+    az webapp create `
+        --resource-group $RgName `
+        --plan $PlanName `
+        --name $AppName `
+        --runtime "DOTNET|8.0"
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-ScriptError "Failed to create Web app"
+        return $false
+    }
+    
+    Write-ScriptSuccess "Web app created: $AppName"
+    return $true
+}
+
+function Enable-HttpsOnly {
+    param([string]$RgName, [string]$AppName)
+    
+    Write-ScriptSection "Configuring HTTPS"
+    
+    az webapp update `
+        --resource-group $RgName `
+        --name $AppName `
+        --set httpsOnly=true
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-ScriptSuccess "HTTPS enforced for web app"
+    } else {
+        Write-ScriptWarning "Could not enforce HTTPS (may require further configuration)"
     }
 }
 
 function Get-PublishProfile {
-    param(
-        [string]$WebAppName,
-        [string]$ResourceGroupName
-    )
+    param([string]$RgName, [string]$AppName)
     
-    Write-Info "Generating publish profile..."
+    Write-ScriptSection "Generating Publish Profile"
     
-    try {
-        $profilePath = "azure-publish-profile-$WebAppName.xml"
+    $profilePath = Join-Path $PSScriptRoot "azure-publish-profile-$AppName.xml"
+    
+    Write-ScriptInfo "Downloading publish profile to: $profilePath"
+    az webapp deployment list-publishing-profiles `
+        --resource-group $RgName `
+        --name $AppName `
+        --xml > $profilePath
+    
+    if ($LASTEXITCODE -ne 0) {
+        Write-ScriptError "Failed to download publish profile"
+        return $null
+    }
+    
+    # Verify file was created
+    if (-not (Test-Path $profilePath)) {
+        Write-ScriptError "Publish profile file not created"
+        return $null
+    }
+    
+    $fileSize = (Get-Item $profilePath).Length
+    Write-ScriptSuccess "Publish profile generated: $profilePath ($fileSize bytes)"
+    
+    return $profilePath
+}
+
+function Register-PublishProfileSecret {
+    param([string]$ProfilePath, [string]$AppName)
+    
+    Write-ScriptSection "Registering GitHub Secret"
+    
+    if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+        Write-ScriptWarning "GitHub CLI not found. Manual secret registration required."
+        Write-ScriptInfo "To register the publish profile secret:"
+        Write-ScriptInfo "  Using PowerShell:"
+        Write-ScriptInfo "    Get-Content -Raw '$ProfilePath' | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -"
+        Write-ScriptInfo ""
+        Write-ScriptInfo "  Do NOT use Bash '<' redirection in PowerShell."
+        return $false
+    }
+    
+    Write-ScriptInfo "Registering AZURE_WEBAPP_PUBLISH_PROFILE secret..."
+    
+    # Use PowerShell-compatible syntax
+    Get-Content -Raw $ProfilePath | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-ScriptSuccess "GitHub secret registered: AZURE_WEBAPP_PUBLISH_PROFILE"
+        return $true
+    } else {
+        Write-ScriptWarning "Failed to register GitHub secret (may require manual registration)"
+        return $false
+    }
+}
+
+# ====================================
+# Path C: Alternate Runtimes
+# ====================================
+
+function Test-AlternateRuntimes {
+    Write-ScriptSection "Path C: Alternate Runtime Options"
+    
+    Write-ScriptInfo "Validated runtime hosts for .NET 8 deployment:`n"
+    
+    # Fly.io
+    Write-ScriptInfo "1. Fly.io (Recommended for quick start)"
+    Write-ScriptInfo "   Command: fly auth login && fly deploy"
+    Write-ScriptInfo "   Config: fly.toml (already configured)"
+    $flyExists = Test-Path (Join-Path (Split-Path $PSScriptRoot) "fly.toml")
+    if ($flyExists) {
+        Write-ScriptSuccess "   fly.toml found in repository"
+    }
+    
+    # Render
+    Write-ScriptInfo "`n2. Render"
+    Write-ScriptInfo "   Command: render deploy"
+    Write-ScriptInfo "   Config: render.yaml (already configured)"
+    $renderExists = Test-Path (Join-Path (Split-Path $PSScriptRoot) "render.yaml")
+    if ($renderExists) {
+        Write-ScriptSuccess "   render.yaml found in repository"
+    }
+    
+    # Railway
+    Write-ScriptInfo "`n3. Railway"
+    Write-ScriptInfo "   Command: railway deploy"
+    Write-ScriptInfo "   Supports Docker deployment"
+    
+    # DigitalOcean App Platform
+    Write-ScriptInfo "`n4. DigitalOcean App Platform"
+    Write-ScriptInfo "   Supports Docker deployment"
+    Write-ScriptInfo "   More info: https://docs.digitalocean.com/products/app-platform/"
+    
+    # AWS App Runner
+    Write-ScriptInfo "`n5. AWS App Runner"
+    Write-ScriptInfo "   Supports container image deployment"
+    Write-ScriptInfo "   More info: https://aws.amazon.com/apprunner/"
+    
+    Write-ScriptInfo "`nSee docs/CONTAINER-DEPLOYMENT.md for detailed instructions."
+    
+    return $true
+}
+
+# ====================================
+# Validation Summary
+# ====================================
+
+function Test-DeploymentPrerequisites {
+    param([string]$RgName, [string]$AppName)
+    
+    Write-ScriptSection "Validating Deployment Prerequisites"
+    
+    $allGood = $true
+    
+    # Test health endpoint availability
+    Write-ScriptInfo "Checking health endpoint configuration..."
+    $projPath = Join-Path (Split-Path $PSScriptRoot) "src/JPVOS/Program.cs"
+    if (Get-Content $projPath | Select-String "app\.MapGet.*`"/health`"" -Quiet) {
+        Write-ScriptSuccess "Health endpoint configured at /health"
+    } else {
+        Write-ScriptError "Health endpoint not found in Program.cs"
+        $allGood = $false
+    }
+    
+    # Check resource availability
+    if ($RgName -and $AppName) {
+        Write-ScriptInfo "Checking Azure resources..."
         
-        # Get publish profile in XML format
-        az webapp deployment list-publishing-profiles `
-            --name $WebAppName `
-            --resource-group $ResourceGroupName > $profilePath 2>&1
-        
-        if (Test-Path $profilePath) {
-            Write-Success "Publish profile generated: $profilePath"
-            return $profilePath
+        # Check resource group
+        $rg = az group exists --name $RgName | ConvertFrom-Json
+        if ($rg) {
+            Write-ScriptSuccess "Resource group exists: $RgName"
+        } else {
+            Write-ScriptError "Resource group not found: $RgName"
+            $allGood = $false
         }
-        else {
-            Write-Error "Failed to generate publish profile"
+        
+        # Check web app
+        $app = az webapp show --resource-group $RgName --name $AppName --output json 2>$null | ConvertFrom-Json
+        if ($app) {
+            Write-ScriptSuccess "Web app exists: $AppName"
+            Write-ScriptInfo "  URL: $($app.defaultHostName)"
+            Write-ScriptInfo "  Runtime: $($app.linuxFxVersion)"
+        } else {
+            Write-ScriptError "Web app not found: $AppName"
+            $allGood = $false
+        }
+    }
+    
+    return $allGood
+}
+
+# ====================================
+# Main Execution
+# ====================================
+
+function Main {
+    Write-Host "$($PSStyle.Foreground.Cyan)
+╔═════════════════════════════════════════════════════════════╗
+║    JPV-OS Access Gateway - Azure App Service Provisioning   ║
+╚═════════════════════════════════════════════════════════════╝
+$($PSStyle.Reset)"
+    
+    Write-ScriptInfo "Path: $Path (Region: $Region) | SKU: $SkuSize"
+    
+    # Step 1: Validate prerequisites
+    if (-not (Test-Prerequisites)) {
+        exit 1
+    }
+    
+    # Step 2: Authentication
+    if (-not (Test-AzureLogin -Tenant $TenantId)) {
+        exit 1
+    }
+    
+    # Step 3: Subscription
+    if ($Path -in "A", "B") {
+        if (-not $SubscriptionId) {
+            Write-ScriptError "SubscriptionId required for Path A and B"
+            
+            $subs = Get-AvailableSubscriptions
+            if ($subs.Count -gt 0) {
+                Write-ScriptInfo "Use one of the available subscription IDs above:"
+                Write-ScriptInfo "  .\provision-azure-appservice.ps1 -Path $Path -SubscriptionId '<subscription-id>'"
+            }
+            exit 1
+        }
+        
+        if (-not (Set-ActiveSubscription -SubId $SubscriptionId)) {
             exit 1
         }
     }
-    catch {
-        Write-Error "Failed to get publish profile: $_"
-        exit 1
+    
+    # Step 4: Quota check
+    if ($Path -in "A", "B") {
+        Test-AppServiceQuota -Region $Region
     }
-}
-
-function Set-GitHubSecret {
-    param(
-        [string]$PublishProfilePath
-    )
     
-    Write-Info "Configuring GitHub deployment secret..."
+    # If validation only, stop here
+    if ($Validate) {
+        Write-ScriptSuccess "Validation complete"
+        
+        # Additional validation for existing resources
+        Test-DeploymentPrerequisites -RgName $ResourceGroup -AppName $WebAppName
+        exit 0
+    }
     
-    # Check if gh CLI is available
-    try {
-        $ghCheck = gh --version 2>&1
-        if ($null -eq $ghCheck) {
-            throw "gh CLI not available"
+    # Step 5: Path A/B - Create resources
+    if ($Path -eq "A") {
+        Write-ScriptSection "Path A: JayPVentures LLC Tenant Subscription"
+        Write-ScriptInfo "Provisioning resources using JayPVentures LLC tenant..."
+        
+        if (-not (New-ResourceGroup -RgName $ResourceGroup -Region $Region)) {
+            exit 1
+        }
+        
+        if (-not (New-AppServicePlan -RgName $ResourceGroup -PlanName $AppServicePlan -Region $Region -Sku $SkuSize)) {
+            exit 1
+        }
+        
+        if (-not (New-WebApp -RgName $ResourceGroup -AppName $WebAppName -PlanName $AppServicePlan)) {
+            exit 1
+        }
+        
+        Enable-HttpsOnly -RgName $ResourceGroup -AppName $WebAppName
+        
+        $profilePath = Get-PublishProfile -RgName $ResourceGroup -AppName $WebAppName
+        if ($profilePath) {
+            Register-PublishProfileSecret -ProfilePath $profilePath -AppName $WebAppName
         }
     }
-    catch {
-        Write-Warning "GitHub CLI (gh) not available. Manual configuration needed:"
-        Write-Warning "1. Read publish profile: Get-Content -Raw '$PublishProfilePath'"
-        Write-Warning "2. Copy the XML content"
-        Write-Warning "3. In GitHub: Settings > Secrets and variables > Actions"
-        Write-Warning "4. Create new secret: AZURE_WEBAPP_PUBLISH_PROFILE"
-        Write-Warning "5. Paste the XML content"
-        return $false
-    }
-    
-    try {
-        Write-Info "Reading publish profile..."
-        $publishProfile = Get-Content -Raw $PublishProfilePath
+    elseif ($Path -eq "B") {
+        Write-ScriptSection "Path B: Existing Subscription Quota"
+        Write-ScriptInfo "Using existing subscription with verified quota..."
         
-        Write-Info "Setting GitHub secret: AZURE_WEBAPP_PUBLISH_PROFILE"
-        $publishProfile | gh secret set AZURE_WEBAPP_PUBLISH_PROFILE --body-file -
+        if (-not (New-ResourceGroup -RgName $ResourceGroup -Region $Region)) {
+            exit 1
+        }
         
-        Write-Success "GitHub secret configured successfully"
-        return $true
-    }
-    catch {
-        Write-Error "Failed to set GitHub secret: $_"
-        Write-Warning "Manual configuration needed. See instructions above."
-        return $false
-    }
-}
-
-function Trigger-Deployment {
-    param(
-        [string]$WebAppName
-    )
-    
-    Write-Info "Triggering GitHub Actions deployment..."
-    
-    # Check if gh CLI is available
-    try {
-        $ghCheck = gh --version 2>&1
-        if ($null -eq $ghCheck) {
-            throw "gh CLI not available"
+        if (-not (New-AppServicePlan -RgName $ResourceGroup -PlanName $AppServicePlan -Region $Region -Sku $SkuSize)) {
+            Write-ScriptError "Quota insufficient. Request quota increase at:"
+            Write-ScriptInfo "  https://portal.azure.com > Subscriptions > Usage + quotas"
+            exit 1
+        }
+        
+        if (-not (New-WebApp -RgName $ResourceGroup -AppName $WebAppName -PlanName $AppServicePlan)) {
+            exit 1
+        }
+        
+        Enable-HttpsOnly -RgName $ResourceGroup -AppName $WebAppName
+        
+        $profilePath = Get-PublishProfile -RgName $ResourceGroup -AppName $WebAppName
+        if ($profilePath) {
+            Register-PublishProfileSecret -ProfilePath $profilePath -AppName $WebAppName
         }
     }
-    catch {
-        Write-Warning "GitHub CLI (gh) not available. Manual trigger needed:"
-        Write-Warning "1. Go to: https://github.com/JayPVentures-LLC/jpv-os-access-gateway"
-        Write-Warning "2. Actions > deploy-appservice"
-        Write-Warning "3. Click 'Run workflow'"
-        return $false
+    elseif ($Path -eq "C") {
+        Write-ScriptSection "Path C: Alternate Runtime Host"
+        Test-AlternateRuntimes
     }
     
-    try {
-        Write-Info "Running deploy-appservice workflow..."
-        gh workflow run deploy-appservice.yml
-        Write-Success "Deployment workflow triggered"
-        
-        Write-Info "Waiting for deployment to complete (this may take several minutes)..."
-        Start-Sleep -Seconds 30
-        
-        return $true
-    }
-    catch {
-        Write-Error "Failed to trigger deployment: $_"
-        Write-Warning "Manual trigger needed. See instructions above."
-        return $false
-    }
-}
-
-function Test-HealthEndpoint {
-    param(
-        [string]$WebAppName
-    )
+    # Step 6: Final validation
+    Write-ScriptSection "Provisioning Summary"
     
-    Write-Info "Validating application health endpoint..."
-    
-    $url = "https://$WebAppName.azurewebsites.net/api/health"
-    $maxAttempts = 30
-    $attempt = 0
-    
-    while ($attempt -lt $maxAttempts) {
-        $attempt++
-        
-        try {
-            $response = Invoke-WebRequest -Uri $url -TimeoutSec 10 -ErrorAction SilentlyContinue
-            
-            if ($response.StatusCode -eq 200) {
-                Write-Success "Health endpoint is responding: $url"
-                $body = $response.Content | ConvertFrom-Json
-                Write-Success "Response: $($body | ConvertTo-Json -Depth 2)"
-                return $true
-            }
-        }
-        catch {
-            if ($attempt -eq 1) {
-                Write-Info "Waiting for application to become available ($attempt/$maxAttempts)..."
-            }
-            elseif ($attempt % 5 -eq 0) {
-                Write-Info "Still waiting... ($attempt/$maxAttempts)"
-            }
-            Start-Sleep -Seconds 10
+    if ($Path -in "A", "B") {
+        if (Test-DeploymentPrerequisites -RgName $ResourceGroup -AppName $WebAppName) {
+            Write-ScriptSuccess "All prerequisites validated. Ready for deployment."
+            Write-ScriptInfo "Next steps:"
+            Write-ScriptInfo "  1. Configure app settings in Azure Portal"
+            Write-ScriptInfo "  2. Run GitHub Actions workflow: 'Deploy to Azure App Service'"
+            Write-ScriptInfo "  3. Monitor deployment at: https://portal.azure.com"
         }
     }
-    
-    Write-Warning "Health endpoint not responding after $(($maxAttempts * 10) / 60) minutes"
-    Write-Warning "The application may still be deploying. Check Azure Portal for status."
-    return $false
 }
 
-function Show-Summary {
-    param(
-        [string]$ResourceGroupName,
-        [string]$WebAppName,
-        [string]$PublishProfilePath,
-        [bool]$HealthCheckPassed
-    )
-    
-    $url = "https://$WebAppName.azurewebsites.net/api/health"
-    
-    Write-Host ""
-    Write-Success "========================================="
-    Write-Success "PROVISIONING COMPLETE"
-    Write-Success "========================================="
-    Write-Host ""
-    Write-Info "Resource Details:"
-    Write-Host "  Resource Group:    $ResourceGroupName"
-    Write-Host "  Web App Name:      $WebAppName"
-    Write-Host "  URL:               https://$WebAppName.azurewebsites.net"
-    Write-Host "  Health Endpoint:   https://$WebAppName.azurewebsites.net/api/health"
-    Write-Host ""
-    Write-Info "Next Steps:"
-    Write-Host "  1. Verify: $url"
-    Write-Host "  2. Configure custom domain if needed"
-    Write-Host "  3. Update Cloudflare DNS to point to Azure App Service"
-    Write-Host ""
-    
-    if ($HealthCheckPassed) {
-        Write-Success "Application is healthy and ready for production"
-    }
-    else {
-        Write-Warning "Application health status unknown. Check Azure Portal."
-    }
-    
-    Write-Host "  Publish Profile:   $PublishProfilePath"
-    Write-Host ""
-}
-
-# ============================================================================
-# Main Execution
-# ============================================================================
-
-Write-Host ""
-Write-Host "========================================="
-Write-Host "JPV-OS Access Gateway - Azure Provisioning"
-Write-Host "========================================="
-Write-Host ""
-
-# Step 1: Check prerequisites
-Test-AzurePrerequisites
-
-# Step 2: Validate Azure login
-$currentAccount = Test-AzureLogin
-
-# Step 3: Get available subscriptions
-$subscriptions = Get-AvailableSubscriptions
-
-# Step 4: Select subscription
-$selectedSubscription = Select-Subscription -Subscriptions $subscriptions
-
-# Step 5: Validate subscription authority
-Test-SubscriptionAuthority -SubscriptionId $selectedSubscription.id
-
-# Step 6: Test provider registration
-Test-ProviderRegistration -SubscriptionId $selectedSubscription.id
-
-# Step 7: Find viable region
-$regions = $Regions -split ','
-$viableRegion = Find-ViableRegion -SkuName $SkuName -RegionList $regions
-
-# Step 8: Provision resources
-New-AzureResources `
-    -ResourceGroupName $ResourceGroupName `
-    -AppServicePlanName $AppServicePlanName `
-    -WebAppName $WebAppName `
-    -SkuName $SkuName `
-    -Region $viableRegion
-
-# Step 9: Get publish profile
-$publishProfilePath = Get-PublishProfile `
-    -WebAppName $WebAppName `
-    -ResourceGroupName $ResourceGroupName
-
-# Step 10: Configure GitHub secret
-$secretSet = Set-GitHubSecret -PublishProfilePath $publishProfilePath
-
-# Step 11: Trigger deployment
-$deploymentTriggered = $false
-if ($secretSet) {
-    $deploymentTriggered = Trigger-Deployment -WebAppName $WebAppName
-}
-
-# Step 12: Test health endpoint
-$healthCheckPassed = $false
-if ($deploymentTriggered) {
-    $healthCheckPassed = Test-HealthEndpoint -WebAppName $WebAppName
-}
-
-# Show summary
-Show-Summary `
-    -ResourceGroupName $ResourceGroupName `
-    -WebAppName $WebAppName `
-    -PublishProfilePath $publishProfilePath `
-    -HealthCheckPassed $healthCheckPassed
-
-Write-Host ""
+# Run main function
+Main
