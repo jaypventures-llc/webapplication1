@@ -124,7 +124,11 @@ public class DiscordOAuthController : ControllerBase
       {
         await _discordService.AssignRoleAsync(discordUserId, roleId);
       }
-      catch (Exception ex)
+      catch (HttpRequestException ex)
+      {
+        return StatusCode(502, $"Failed to assign Discord role: {ex.Message}");
+      }
+      catch (TaskCanceledException ex)
       {
         return StatusCode(502, $"Failed to assign Discord role: {ex.Message}");
       }
