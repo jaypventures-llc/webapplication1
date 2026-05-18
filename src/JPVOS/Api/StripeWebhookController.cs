@@ -48,7 +48,11 @@ public class StripeWebhookController : ControllerBase
         {
             case "checkout.session.completed":
             {
-                var session = stripeEvent.Data.Object as Stripe.Checkout.Session ?? JsonSerializer.Deserialize<Stripe.Checkout.Session>(stripeEvent.Data.Object.ToString());
+                var session = stripeEvent.Data.Object as Stripe.Checkout.Session ?? JsonSerializer.Deserialize<Stripe.Checkout.Session>(stripeEvent.Data.Object.ToString() ?? "{}");
+                if (session == null || string.IsNullOrWhiteSpace(session.CustomerId))
+                {
+                    break;
+                }
                 var customerId = session.CustomerId;
                 var subscriptionId = session.SubscriptionId;
                 var priceId = session.LineItems?.FirstOrDefault()?.Price?.Id ?? session.Metadata?["price_id"] ?? "";
@@ -69,7 +73,11 @@ public class StripeWebhookController : ControllerBase
             }
             case "invoice.paid":
             {
-                var invoice = stripeEvent.Data.Object as Stripe.Invoice ?? JsonSerializer.Deserialize<Stripe.Invoice>(stripeEvent.Data.Object.ToString());
+                var invoice = stripeEvent.Data.Object as Stripe.Invoice ?? JsonSerializer.Deserialize<Stripe.Invoice>(stripeEvent.Data.Object.ToString() ?? "{}");
+                if (invoice == null || string.IsNullOrWhiteSpace(invoice.CustomerId))
+                {
+                    break;
+                }
                 var customerId = invoice.CustomerId;
                 var ent = _entitlementService.GetByStripeCustomerId(customerId);
                 if (ent != null)
@@ -82,7 +90,11 @@ public class StripeWebhookController : ControllerBase
             }
             case "invoice.payment_failed":
             {
-                var invoice = stripeEvent.Data.Object as Stripe.Invoice ?? JsonSerializer.Deserialize<Stripe.Invoice>(stripeEvent.Data.Object.ToString());
+                var invoice = stripeEvent.Data.Object as Stripe.Invoice ?? JsonSerializer.Deserialize<Stripe.Invoice>(stripeEvent.Data.Object.ToString() ?? "{}");
+                if (invoice == null || string.IsNullOrWhiteSpace(invoice.CustomerId))
+                {
+                    break;
+                }
                 var customerId = invoice.CustomerId;
                 var ent = _entitlementService.GetByStripeCustomerId(customerId);
                 if (ent != null)
@@ -94,7 +106,7 @@ public class StripeWebhookController : ControllerBase
             }
             case "customer.subscription.updated":
             {
-                var sub = stripeEvent.Data.Object as Stripe.Subscription ?? JsonSerializer.Deserialize<Stripe.Subscription>(stripeEvent.Data.Object.ToString());
+                var sub = stripeEvent.Data.Object as Stripe.Subscription ?? JsonSerializer.Deserialize<Stripe.Subscription>(stripeEvent.Data.Object.ToString() ?? "{}");
                 if (sub == null || string.IsNullOrWhiteSpace(sub.CustomerId))
                 {
                     break;
@@ -112,7 +124,11 @@ public class StripeWebhookController : ControllerBase
             }
             case "customer.subscription.deleted":
             {
-                var sub = stripeEvent.Data.Object as Stripe.Subscription ?? JsonSerializer.Deserialize<Stripe.Subscription>(stripeEvent.Data.Object.ToString());
+                var sub = stripeEvent.Data.Object as Stripe.Subscription ?? JsonSerializer.Deserialize<Stripe.Subscription>(stripeEvent.Data.Object.ToString() ?? "{}");
+                if (sub == null || string.IsNullOrWhiteSpace(sub.CustomerId))
+                {
+                    break;
+                }
                 var customerId = sub.CustomerId;
                 var ent = _entitlementService.GetByStripeCustomerId(customerId);
                 if (ent != null)
