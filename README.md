@@ -61,7 +61,19 @@ docker run -p 8080:8080 ghcr.io/jaypventures-llc/jpv-os:<commit-sha>
 
 See [docs/CONTAINER-DEPLOYMENT.md](docs/CONTAINER-DEPLOYMENT.md) for detailed deployment instructions.
 
-### Azure App Service (Planned)
+### Azure App Service
 
-Azure App Service deployment is planned once Entra ID Conditional Access requirements are resolved. See [docs/AZURE-APP-SERVICE-DEPLOYMENT.md](docs/AZURE-APP-SERVICE-DEPLOYMENT.md).
+Azure App Service deployment is now provisioned using automated scripts. To get started:
+
+**Windows (PowerShell):**
+```powershell
+.\scripts\provision-azure-appservice.ps1 -Path A -SubscriptionId "YOUR-SUBSCRIPTION-ID"
+```
+
+**Linux/macOS (Bash):**
+```bash
+./scripts/provision-azure-appservice.sh -Path A -SubscriptionId "YOUR-SUBSCRIPTION-ID"
+```
+
+See [docs/AZURE-PROVISIONING-GUIDE.md](docs/AZURE-PROVISIONING-GUIDE.md) for complete provisioning instructions and alternative deployment paths.
 
