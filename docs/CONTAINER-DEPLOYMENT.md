@@ -201,12 +201,26 @@ dotnet JPVOS.dll
 
 Or with a process manager like `systemd` or `pm2`.
 
-## Future: Azure App Service
+## Azure App Service
 
-Azure App Service deployment is planned once Entra ID device compliance and Conditional Access requirements are resolved. The existing `azure-deploy.yml` workflow will be used when:
+Azure App Service deployment is now provisioned using automated scripts. To get started:
 
-- [ ] Azure subscription access is restored
-- [ ] Resource group and App Service are provisioned
-- [ ] Publish profile is configured as a GitHub secret
+**Windows (PowerShell):**
+```powershell
+.\scripts\provision-azure-appservice.ps1 -Path A -SubscriptionId "YOUR-SUBSCRIPTION-ID"
+```
 
-See [AZURE-APP-SERVICE-DEPLOYMENT.md](./AZURE-APP-SERVICE-DEPLOYMENT.md) for the full Azure deployment plan.
+**Linux/macOS (Bash):**
+```bash
+./scripts/provision-azure-appservice.sh -Path A -SubscriptionId "YOUR-SUBSCRIPTION-ID"
+```
+
+**Three deployment paths are supported:**
+
+- **Path A**: JayPVentures LLC tenant subscription
+- **Path B**: Existing subscription with quota increase
+- **Path C**: Alternate runtime hosts (Render, Railway, Fly.io)
+
+See [AZURE-PROVISIONING-GUIDE.md](./AZURE-PROVISIONING-GUIDE.md) for complete provisioning instructions, requirements, and troubleshooting.
+
+After provisioning, the existing `azure-deploy.yml` GitHub Actions workflow will handle automated deployments.
