@@ -82,7 +82,7 @@ public class DiscordOAuthController : ControllerBase
       }
 
       // Fetch Discord user info
-      var userReq = new HttpRequestMessage(HttpMethod.Get, "https://discord.com/api/v10/users/@me");
+      using var userReq = new HttpRequestMessage(HttpMethod.Get, "https://discord.com/api/v10/users/@me");
       userReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
       var userRes = await http.SendAsync(userReq);
       if (!userRes.IsSuccessStatusCode)
