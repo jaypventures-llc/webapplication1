@@ -1,3 +1,328 @@
+/* Product Visual (Apple-style slab, aura, rings) */
+.init-home .product-visual {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.init-home .slab {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 180px;
+  height: 44px;
+  background: linear-gradient(120deg, #f5f6fa 60%, #e3e7f0 100%);
+  border-radius: 1.5rem 1.5rem 2.5rem 2.5rem/2.5rem 2.5rem 1.5rem 1.5rem;
+  box-shadow: 0 8px 48px 0 #4e7fff22, 0 1.5px 8px 0 #23263a22;
+  transform: translate(-50%, -50%) scale(1.0);
+  z-index: 2;
+}
+
+.init-home .slab-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 220px;
+  height: 80px;
+  background: radial-gradient(circle, #4e7fff33 0%, transparent 80%);
+  filter: blur(18px);
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.init-home .slab-aura {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260px;
+  height: 120px;
+  background: radial-gradient(circle, #7f9fff22 0%, transparent 90%);
+  filter: blur(32px);
+  transform: translate(-50%, -50%);
+  z-index: 0;
+}
+
+.init-home .slab-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  border: 1.5px solid #e3e7f0;
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+.init-home .slab-ring.ring1 {
+  width: 220px;
+  height: 80px;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.init-home .slab-ring.ring2 {
+  width: 260px;
+  height: 120px;
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.init-home .slab-ring.ring3 {
+  width: 320px;
+  height: 180px;
+  border-color: #4e7fff33;
+  transform: translate(-50%, -50%) scale(1.18);
+}
+
+@media (max-width: 600px) {
+  .init-home .product-visual {
+    width: 100vw;
+    height: 180px;
+    min-width: 0;
+  }
+
+  .init-home .slab {
+    width: 90vw;
+    min-width: 120px;
+    max-width: 320px;
+    height: 32px;
+  }
+
+  .init-home .slab-glow,
+  .init-home .slab-aura,
+  .init-home .slab-ring {
+    width: 100vw;
+    max-width: 320px;
+    min-width: 120px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Trust Metrics (public, not dashboard) */
+.init-home .trust-metrics {
+  margin-top: 2.2rem;
+  display: flex;
+  gap: 2.2rem;
+  justify-content: flex-start;
+}
+
+.init-home .trust-metrics .metric-card {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 1.2rem;
+  box-shadow: 0 1.5px 8px 0 rgba(0, 0, 0, 0.06);
+  color: #23263a;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 1.2rem 2.2rem;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+
+.init-home .trust-metrics .metric-card strong {
+  font-size: 1.7rem;
+  color: #4e7fff;
+  font-weight: 800;
+  margin-top: 0.3rem;
+}
+
+.init-home .trust-metrics .metric-card:hover {
+  box-shadow: 0 4px 32px 0 rgba(78, 127, 255, 0.10);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Product Lanes (Apple-style) */
+.init-home .product-lanes {
+  display: flex;
+  gap: 2.5vw;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2.2rem;
+}
+
+.init-home .product-lanes .lane-card {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 1.2rem;
+  box-shadow: 0 1.5px 8px 0 rgba(0, 0, 0, 0.06);
+  color: #23263a;
+  font-weight: 600;
+  font-size: 1.08rem;
+  padding: 2.2rem 2.8rem;
+  min-width: 220px;
+  max-width: 340px;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.2rem;
+  transition: box-shadow 0.18s, transform 0.18s;
+  cursor: pointer;
+  outline: none;
+}
+
+.init-home .product-lanes .lane-card:hover {
+  box-shadow: 0 4px 32px 0 rgba(78, 127, 255, 0.10);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.init-home .product-lanes .lane-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.init-home .product-lanes .lane-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #4e7fff;
+}
+
+.init-home .product-lanes .lane-desc {
+  font-size: 1.02rem;
+  color: #23263a;
+  opacity: 0.85;
+}
+
+/* Partner Ecosystem (quiet, text) */
+.init-home .partner-ecosystem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 2.2rem 0 3.2rem 0;
+}
+
+.init-home .partner-text {
+  color: #7e8aad;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.init-home .partner-list {
+  color: #23263a;
+  font-size: 1.08rem;
+  opacity: 0.7;
+}
+
+/* Architecture Layers (Apple-style) */
+.init-home .architecture-section {
+  margin: 3.5rem 0 2.5rem 0;
+  text-align: center;
+}
+
+.init-home .architecture-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  justify-content: center;
+  margin-top: 1.2rem;
+}
+
+.init-home .arch-layer {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 1.2rem;
+  color: #23263a;
+  font-weight: 700;
+  font-size: 1.08rem;
+  padding: 1.1rem 2.2rem;
+  min-width: 120px;
+  box-shadow: 0 1.5px 8px 0 rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+
+.init-home .arch-layer:hover {
+  box-shadow: 0 4px 32px 0 rgba(78, 127, 255, 0.10);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Trust Strip (public, not dashboard) */
+.init-home .trust-strip-section {
+  margin: 2.5rem 0 0 0;
+  display: flex;
+  justify-content: center;
+}
+
+.init-home .trust-strip {
+  background: linear-gradient(90deg, #e3e7f0 0%, #f5f6fa 100%);
+  color: #4e7fff;
+  font-size: 1.08rem;
+  font-weight: 600;
+  border-radius: 1.2rem;
+  box-shadow: 0 1.5px 8px 0 rgba(0, 0, 0, 0.06);
+  padding: 0.7rem 2.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.init-home .trust-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: #4e7fff;
+  box-shadow: 0 0 8px #4e7fff88;
+}
+
+.init-home .trust-label {
+  color: #23263a;
+  font-weight: 600;
+}
+
+/* Enterprise Footer (Apple-style) */
+.init-home .enterprise-footer {
+  padding: 3.5rem 0 2.2rem 0;
+  background: linear-gradient(120deg, #f5f6fa 0%, #e3e7f0 100%);
+  border-top: 1.5px solid #e3e7f0;
+  box-shadow: 0 -2px 24px 0 #4e7fff08;
+}
+
+.init-home .footer-content {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.init-home .footer-brand {
+  color: #4e7fff;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.init-home .footer-links {
+  display: flex;
+  gap: 2.2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.init-home .footer-links a {
+  color: #23263a;
+  font-size: 1.08rem;
+  text-decoration: none;
+  font-weight: 600;
+  opacity: 0.8;
+  transition: color 0.18s, opacity 0.18s;
+}
+
+.init-home .footer-links a:hover {
+  color: #4e7fff;
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.init-home .footer-meta {
+  color: #7e8aad;
+  font-size: 1.02rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
 /* Navigation Status Strip */
 .init-home .nav-status-strip {
   width: 100%;
@@ -233,6 +558,7 @@
   background: rgba(255, 255, 255, 0.08);
   border-radius: 1.5rem;
   box-shadow: 0 2px 24px 0 rgba(78, 127, 255, 0.10);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   border: 1.5px solid rgba(78, 127, 255, 0.10);
   padding: 2.2rem 2.8rem;
@@ -289,6 +615,7 @@
   z-index: 100;
   width: 100%;
   background: rgba(24, 28, 38, 0.82);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   box-shadow: 0 2px 24px 0 rgba(78, 127, 255, 0.08);
   border-bottom: 1.5px solid rgba(78, 127, 255, 0.10);
@@ -367,6 +694,7 @@
   border-radius: 2.2rem;
   box-shadow: 0 4px 48px 0 rgba(78, 127, 255, 0.13), 0 1.5px 8px 0 rgba(0, 0, 0, 0.10);
   border: 1.5px solid rgba(78, 127, 255, 0.13);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
   padding: 3.2rem 3.8rem;
   margin-bottom: 2.2rem;
@@ -622,6 +950,7 @@
   background: rgba(24, 28, 38, 0.82);
   border-top: 1.5px solid rgba(78, 127, 255, 0.10);
   box-shadow: 0 -2px 24px 0 rgba(78, 127, 255, 0.08);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   padding: 2.5rem 0;
   margin-top: 4.5rem;
