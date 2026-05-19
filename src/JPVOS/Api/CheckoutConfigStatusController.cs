@@ -1,55 +1,57 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
-using System.Linq;
+using JPVOS.Infrastructure.Stripe;
+
+namespace JPVOS.Api;
 
 [ApiController]
-[Route("api/checkout/config-status")]
-public class CheckoutConfigStatusController : ControllerBase
+[Route("api/checkout/status")]
+public sealed class CheckoutConfigStatusController : ControllerBase
 {
-  private static readonly string[] StripeConfigVars = new[]
-  {
-        // Current pricing model
-        "STRIPE_SECRET_KEY",
-        "STRIPE_WEBHOOK_SECRET",
-        "STRIPE_PRICE_MEMBER_MONTHLY",
-        "STRIPE_PRICE_MEMBER_ANNUAL",
-        "STRIPE_PRICE_VIP_MONTHLY",
-        "STRIPE_PRICE_VIP_ANNUAL",
-        "STRIPE_PRICE_CREATOR_LANE_MONTHLY",
-        "STRIPE_PRICE_OPERATOR_MONTHLY",
-        "STRIPE_PRICE_ENTERPRISE_MONTHLY",
-        // Compatibility/legacy
-        "STRIPE_PRICE_ID_COMMUNITY",
-        "STRIPE_PRICE_ID_VIP",
-        "STRIPE_PRICE_ENTERPRISE_ANNUAL",
-        "STRIPE_PRICE_CUSTOM_IMPLEMENTATION"
-    };
+    private readonly StripePricingLoader _loader;
 
-  private readonly IConfiguration _config;
-  public CheckoutConfigStatusController(IConfiguration config)
-  {
-    _config = config;
-  }
-
-  [HttpGet]
-  public IActionResult Get()
-  {
-    var configStatus = StripeConfigVars.ToDictionary(
-        v => v,
-        v => !string.IsNullOrWhiteSpace(_config[v])
-    );
-    var secret = _config["STRIPE_SECRET_KEY"] ?? string.Empty;
-    string checkoutMode = "unknown";
-    if (!string.IsNullOrWhiteSpace(secret))
+    public CheckoutConfigStatusController(
+        StripePricingLoader loader)
     {
-      checkoutMode = secret.StartsWith("sk_test_") ? "test" : (secret.StartsWith("sk_live_") ? "live" : "unknown");
+        _loader = loader;
     }
-    return Ok(new
+
+    [HttpGet]
+    public IActionResult Get()
     {
-      stripeConfigured = configStatus["STRIPE_SECRET_KEY"] && configStatus["STRIPE_WEBHOOK_SECRET"],
-      checkoutMode,
-      config = configStatus
-    });
-  }
+        try
+        {
+            var map = _loader.Load();
+
+            var secret =
+                Environment.GetEnvironmentVariable("STRIPE_SECRET_KEY");
+
+            var webhook =
+                Environment.GetEnvironmentVariable("STRIPE_WEBHOOK_SECRET");
+
+            return Ok(new
+            {
+                stripeConfigured =
+                    !string.IsNullOrWhiteSpace(secret),
+
+                webhookConfigured =
+                    !string.IsNullOrWhiteSpace(webhook),
+
+                pricingMapLoaded = true,
+
+                mode = map.Mode,
+
+                lookupKeys = map.Prices.Keys,
+
+                environmentHealthy = true
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                environmentHealthy = false,
+                error = ex.Message
+            });
+        }
+    }
 }

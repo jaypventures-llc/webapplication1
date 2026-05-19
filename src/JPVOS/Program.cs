@@ -1,3 +1,4 @@
+using Stripe;
 
 using JPVOS.Components;
 using JPVOS.Services;
@@ -58,4 +59,5 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 app.Run();
+
 
