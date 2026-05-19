@@ -834,6 +834,7 @@
   border-radius: 50%;
   display: inline-block;
   margin-right: 0.5rem;
+  box-shadow: 0 0 8px 0 rgba(78, 127, 255, 0.18);
 }
 
 .init-home .lane-status {
