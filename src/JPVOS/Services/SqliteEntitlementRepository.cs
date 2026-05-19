@@ -18,6 +18,8 @@ public class SqliteEntitlementRepository : IEntitlementRepository
         _dbPath = dbPath ?? throw new ArgumentNullException(nameof(dbPath));
         _logger = logger;
         
+        _logger?.LogInformation("Configuring SQLite entitlements database at: {DbPath}", _dbPath);
+        
         try
         {
             ValidateAndInitializeDatabase();
@@ -215,12 +217,11 @@ public class SqliteEntitlementRepository : IEntitlementRepository
     {
         if (string.IsNullOrEmpty(input))
             return "[empty]";
-        // Log first few characters + hash for debugging without exposing full PII
-        var prefix = input.Length > 8 ? input.Substring(0, 8) : input;
+        // Hash only for audit trail without exposing any input characters
         using var sha = System.Security.Cryptography.SHA256.Create();
         var hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
         var hashHex = System.Convert.ToHexString(hash).Substring(0, 8);
-        return $"{prefix}...{hashHex}";
+        return hashHex;
     }
 
     public void RemoveByStripeCustomerId(string customerId)

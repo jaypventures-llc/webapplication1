@@ -69,6 +69,8 @@ PeopleProtectionStartupGuard.Verify(app);
 if (!app.Environment.IsDevelopment())
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    // The dbPath variable is not accessible here; the path is determined inside the service factory
+    // The actual path will be logged by the repository initialization
     logger.LogInformation("Entitlements database configured for production deployment");
 }
 

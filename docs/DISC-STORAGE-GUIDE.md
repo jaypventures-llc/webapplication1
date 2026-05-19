@@ -198,7 +198,7 @@ metadata:
   name: jpv-os-pv
 spec:
   capacity:
-    storage: 10Gi
+    storage: 2Gi  # Typical usage: ~150MB for 100k records, 2Gi provides headroom for growth
   accessModes:
     - ReadWriteOnce
   storageClassName: standard
@@ -218,7 +218,7 @@ spec:
   storageClassName: standard
   resources:
     requests:
-      storage: 10Gi
+      storage: 2Gi
 ```
 
 **Deployment:**
