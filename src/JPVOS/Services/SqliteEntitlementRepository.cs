@@ -6,13 +6,78 @@ using System.Linq;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using JPVOS.Models;
+using Microsoft.Extensions.Logging;
 
 public class SqliteEntitlementRepository : IEntitlementRepository
 {
     private readonly string _dbPath;
-    public SqliteEntitlementRepository(string dbPath)
+    private readonly ILogger<SqliteEntitlementRepository>? _logger;
+
+    public SqliteEntitlementRepository(string dbPath, ILogger<SqliteEntitlementRepository>? logger = null)
     {
-        _dbPath = dbPath;
+        _dbPath = dbPath ?? throw new ArgumentNullException(nameof(dbPath));
+        _logger = logger;
+        
+        try
+        {
+            ValidateAndInitializeDatabase();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to initialize entitlements database at {DbPath}", _dbPath);
+            throw;
+        }
+    }
+
+    private void ValidateAndInitializeDatabase()
+    {
+        var directory = Path.GetDirectoryName(_dbPath);
+        
+        // Ensure directory exists
+        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+        {
+            try
+            {
+                Directory.CreateDirectory(directory);
+                _logger?.LogInformation("Created entitlements database directory: {Directory}", directory);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to create database directory: {Directory}", directory);
+                throw;
+            }
+        }
+
+        // Validate write permissions
+        if (File.Exists(_dbPath))
+        {
+            try
+            {
+                // Test write permission by opening in read mode
+                using var fs = File.OpenRead(_dbPath);
+                _logger?.LogInformation("Entitlements database accessible at {DbPath}", _dbPath);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Insufficient permissions to access entitlements database at {DbPath}", _dbPath);
+                throw;
+            }
+        }
+        else
+        {
+            try
+            {
+                // Test write permission by creating the file
+                using var fs = File.Create(_dbPath);
+                _logger?.LogInformation("Created new entitlements database at {DbPath}", _dbPath);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to create entitlements database at {DbPath}. Check directory write permissions.", _dbPath);
+                throw;
+            }
+        }
+
         EnsureTable();
     }
 
@@ -20,86 +85,162 @@ public class SqliteEntitlementRepository : IEntitlementRepository
 
     private void EnsureTable()
     {
-        using var db = GetConnection();
-        db.Execute(@"CREATE TABLE IF NOT EXISTS Entitlements (
-            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Email TEXT,
-            StripeCustomerId TEXT UNIQUE,
-            StripeSubscriptionId TEXT,
-            PackageKey TEXT,
-            BillingInterval TEXT,
-            Status TEXT,
-            DiscordUserId TEXT,
-            DiscordRole TEXT,
-            CreatedAt TEXT,
-            UpdatedAt TEXT,
-            AccessExpiration TEXT
-        )");
+        try
+        {
+            using var db = GetConnection();
+            db.Execute(@"CREATE TABLE IF NOT EXISTS Entitlements (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Email TEXT,
+                StripeCustomerId TEXT UNIQUE,
+                StripeSubscriptionId TEXT,
+                PackageKey TEXT,
+                BillingInterval TEXT,
+                Status TEXT,
+                DiscordUserId TEXT,
+                DiscordRole TEXT,
+                CreatedAt TEXT,
+                UpdatedAt TEXT,
+                AccessExpiration TEXT
+            )");
+            _logger?.LogInformation("Entitlements table ensured");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to ensure Entitlements table exists");
+            throw;
+        }
     }
 
     public EntitlementRecord? GetByStripeCustomerId(string customerId)
     {
-        using var db = GetConnection();
-        return db.QueryFirstOrDefault<EntitlementRecord>("SELECT * FROM Entitlements WHERE StripeCustomerId = @customerId", new { customerId });
+        try
+        {
+            using var db = GetConnection();
+            return db.QueryFirstOrDefault<EntitlementRecord>("SELECT * FROM Entitlements WHERE StripeCustomerId = @customerId", new { customerId });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to get entitlement by Stripe customer ID: {CustomerId}", customerId);
+            throw;
+        }
     }
 
     public EntitlementRecord? GetByStripeSubscriptionId(string subscriptionId)
     {
-        using var db = GetConnection();
-        return db.QueryFirstOrDefault<EntitlementRecord>("SELECT * FROM Entitlements WHERE StripeSubscriptionId = @subscriptionId", new { subscriptionId });
+        try
+        {
+            using var db = GetConnection();
+            return db.QueryFirstOrDefault<EntitlementRecord>("SELECT * FROM Entitlements WHERE StripeSubscriptionId = @subscriptionId", new { subscriptionId });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to get entitlement by Stripe subscription ID: {SubscriptionId}", subscriptionId);
+            throw;
+        }
     }
 
     public EntitlementRecord? GetByDiscordUserId(string discordUserId)
     {
-        using var db = GetConnection();
-        return db.QueryFirstOrDefault<EntitlementRecord>("SELECT * FROM Entitlements WHERE DiscordUserId = @discordUserId", new { discordUserId });
+        try
+        {
+            using var db = GetConnection();
+            return db.QueryFirstOrDefault<EntitlementRecord>("SELECT * FROM Entitlements WHERE DiscordUserId = @discordUserId", new { discordUserId });
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to get entitlement by Discord user ID: {DiscordUserId}", discordUserId);
+            throw;
+        }
     }
 
     public void AddOrUpdate(EntitlementRecord record)
     {
-        using var db = GetConnection();
-        var existing = GetByStripeSubscriptionId(record.StripeSubscriptionId);
-        if (existing != null)
+        try
         {
-            // Idempotency: update existing
-            db.Execute(@"UPDATE Entitlements SET
-                Email = @Email,
-                StripeCustomerId = @StripeCustomerId,
-                PackageKey = @PackageKey,
-                BillingInterval = @BillingInterval,
-                Status = @Status,
-                DiscordUserId = @DiscordUserId,
-                DiscordRole = @DiscordRole,
-                UpdatedAt = @UpdatedAt,
-                AccessExpiration = @AccessExpiration
-                WHERE StripeSubscriptionId = @StripeSubscriptionId",
-                record);
+            using var db = GetConnection();
+            var existing = GetByStripeSubscriptionId(record.StripeSubscriptionId);
+            if (existing != null)
+            {
+                // Idempotency: update existing
+                db.Execute(@"UPDATE Entitlements SET
+                    Email = @Email,
+                    StripeCustomerId = @StripeCustomerId,
+                    PackageKey = @PackageKey,
+                    BillingInterval = @BillingInterval,
+                    Status = @Status,
+                    DiscordUserId = @DiscordUserId,
+                    DiscordRole = @DiscordRole,
+                    UpdatedAt = @UpdatedAt,
+                    AccessExpiration = @AccessExpiration
+                    WHERE StripeSubscriptionId = @StripeSubscriptionId",
+                    record);
+                _logger?.LogInformation("Updated entitlement for Stripe subscription: {SubscriptionId}", record.StripeSubscriptionId);
+            }
+            else
+            {
+                db.Execute(@"INSERT INTO Entitlements (
+                    Email, StripeCustomerId, StripeSubscriptionId, PackageKey, BillingInterval, Status, DiscordUserId, DiscordRole, CreatedAt, UpdatedAt, AccessExpiration
+                ) VALUES (
+                    @Email, @StripeCustomerId, @StripeSubscriptionId, @PackageKey, @BillingInterval, @Status, @DiscordUserId, @DiscordRole, @CreatedAt, @UpdatedAt, @AccessExpiration
+                )", record);
+                _logger?.LogInformation("Created new entitlement for Stripe subscription: {SubscriptionId}", record.StripeSubscriptionId);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            db.Execute(@"INSERT INTO Entitlements (
-                Email, StripeCustomerId, StripeSubscriptionId, PackageKey, BillingInterval, Status, DiscordUserId, DiscordRole, CreatedAt, UpdatedAt, AccessExpiration
-            ) VALUES (
-                @Email, @StripeCustomerId, @StripeSubscriptionId, @PackageKey, @BillingInterval, @Status, @DiscordUserId, @DiscordRole, @CreatedAt, @UpdatedAt, @AccessExpiration
-            )", record);
+            _logger?.LogError(ex, "Failed to add or update entitlement: {StripeCustomerId}", record.StripeCustomerId);
+            throw;
         }
     }
 
     public void RemoveByStripeCustomerId(string customerId)
     {
-        using var db = GetConnection();
-        db.Execute("DELETE FROM Entitlements WHERE StripeCustomerId = @customerId", new { customerId });
+        try
+        {
+            using var db = GetConnection();
+            var count = db.Execute("DELETE FROM Entitlements WHERE StripeCustomerId = @customerId", new { customerId });
+            if (count > 0)
+            {
+                _logger?.LogInformation("Removed entitlement for Stripe customer: {CustomerId}", customerId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to remove entitlement by Stripe customer ID: {CustomerId}", customerId);
+            throw;
+        }
     }
 
     public void RemoveByStripeSubscriptionId(string subscriptionId)
     {
-        using var db = GetConnection();
-        db.Execute("DELETE FROM Entitlements WHERE StripeSubscriptionId = @subscriptionId", new { subscriptionId });
+        try
+        {
+            using var db = GetConnection();
+            var count = db.Execute("DELETE FROM Entitlements WHERE StripeSubscriptionId = @subscriptionId", new { subscriptionId });
+            if (count > 0)
+            {
+                _logger?.LogInformation("Removed entitlement for Stripe subscription: {SubscriptionId}", subscriptionId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to remove entitlement by Stripe subscription ID: {SubscriptionId}", subscriptionId);
+            throw;
+        }
     }
 
     public IEnumerable<EntitlementRecord> GetAll()
     {
-        using var db = GetConnection();
-        return db.Query<EntitlementRecord>("SELECT * FROM Entitlements");
+        try
+        {
+            using var db = GetConnection();
+            return db.Query<EntitlementRecord>("SELECT * FROM Entitlements");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to get all entitlements");
+            throw;
+        }
     }
 }
+

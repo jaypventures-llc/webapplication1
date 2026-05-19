@@ -78,14 +78,19 @@ Assign the role IDs to the corresponding environment variables above.
 
 ## 6. Persistence Requirement
 
-- **In-memory entitlement storage is NOT production-ready.**
-- For production, you must use a persistent repository (e.g., SQLite, SQL Server, or cloud DB) for entitlements.
-- The SqliteEntitlementRepository is provided for local/dev and small-scale production. For scale or compliance, use a managed database.
+- **Production-ready persistent storage:** The SQLite entitlements repository is now configured with comprehensive error handling, automatic initialization, and intelligent path detection for production environments.
+- Environment-aware defaults: Automatically uses `/home` on Azure App Service, `/app/data` in containers, or a custom path via `ENTITLEMENTS_DB_PATH` environment variable.
+- For larger deployments or compliance requirements, the persistent repository can be replaced with managed databases (SQL Server, PostgreSQL, Azure SQL).
+- Database initialization is validated on startup with detailed error logging.
 
 ## 7. Backup/Export Requirement
 
-- You must regularly back up the entitlement database (e.g., entitlements.db for SQLite).
-- Implement export routines for compliance and disaster recovery.
+- You must regularly back up the entitlement database (e.g., `entitlements.db` for SQLite).
+- Implement automated backup routines for your deployment platform:
+  - **Azure App Service:** Use Azure Storage backup for `/home` directory
+  - **Docker:** Mount persistent volumes and implement volume snapshots
+  - **Render/Fly.io:** Use platform-provided database snapshots
+- Export routines for compliance and disaster recovery are available through `IEntitlementRepository.GetAll()` method.
 
 ## 8. Revocation Audit Requirement
 

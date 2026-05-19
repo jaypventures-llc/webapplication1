@@ -12,16 +12,46 @@ Stripe.StripeConfiguration.ApiKey = builder.Configuration["STRIPE_SECRET_KEY"];
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
+
+// Configure entitlements service based on environment
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddSingleton<IEntitlementService, InMemoryEntitlementService>();
 }
 else
 {
-    var dbPath = Path.Combine(AppContext.BaseDirectory, "entitlements.db");
-    builder.Services.AddSingleton<IEntitlementRepository>(new SqliteEntitlementRepository(dbPath));
+    // Production: Configure persistent SQLite storage
+    var dbPath = builder.Configuration["ENTITLEMENTS_DB_PATH"];
+    
+    // Default database paths for common deployment scenarios
+    if (string.IsNullOrWhiteSpace(dbPath))
+    {
+        // Azure App Service: Use /home directory for persistent storage
+        if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("WEBSITE_INSTANCE_ID")))
+        {
+            dbPath = Path.Combine("/home", "entitlements.db");
+        }
+        // Docker/Container: Use /app/data directory
+        else if (Directory.Exists("/app/data") || Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true")
+        {
+            dbPath = Path.Combine("/app/data", "entitlements.db");
+        }
+        // Fallback: Use application directory
+        else
+        {
+            dbPath = Path.Combine(AppContext.BaseDirectory, "entitlements.db");
+        }
+    }
+
+    // Register repository with logger support
+    builder.Services.AddSingleton<IEntitlementRepository>(sp =>
+    {
+        var logger = sp.GetRequiredService<ILogger<SqliteEntitlementRepository>>();
+        return new SqliteEntitlementRepository(dbPath, logger);
+    });
     builder.Services.AddSingleton<IEntitlementService, PersistentEntitlementService>();
 }
+
 builder.Services.AddHttpClient();
 builder.Services.AddSingleton<DiscordService>();
 builder.Services.AddSingleton<WixCheckoutConfig>();
@@ -30,6 +60,13 @@ builder.Services.AddSingleton<WixCheckoutConfig>();
 
 var app = builder.Build();
 PeopleProtectionStartupGuard.Verify(app);
+
+// Log database configuration after app is built
+if (!app.Environment.IsDevelopment())
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("Entitlements database configured for production deployment");
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

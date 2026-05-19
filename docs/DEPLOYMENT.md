@@ -105,15 +105,45 @@ ASPNETCORE_ENVIRONMENT=Production                      # Set to Production for p
 ASPNETCORE_HTTP_PORTS=8080                             # HTTP port (used in containers)
 ```
 
-### Database
+**Entitlements Database (Optional):**
+```
+ENTITLEMENTS_DB_PATH=/path/to/entitlements.db          # Custom database path (optional, see below for defaults)
+```
+
+### Database Configuration
 
 **Development:** In-memory entitlements service (no persistence required)
 
-**Production:** SQLite database (`entitlements.db`)
+**Production:** SQLite database with automatic path detection and configuration
+
+The application automatically detects and configures the database path based on the deployment environment:
+
+1. **Azure App Service:** Database stored at `/home/entitlements.db` (persistent volume)
+   - Automatically detected via `WEBSITE_INSTANCE_ID` environment variable
+   - This location persists across restarts and scaling operations
+   - No manual configuration required
+
+2. **Docker/Container Deployments:** Database stored at `/app/data/entitlements.db`
+   - Automatically detected via directory existence or `DOTNET_RUNNING_IN_CONTAINER` environment variable
+   - Mount `/app/data` as a Docker volume for persistence:
+     ```bash
+     docker run -v /host/data:/app/data -e ASPNETCORE_ENVIRONMENT=Production jpv-os:latest
+     ```
+
+3. **Custom Location:** Set via `ENTITLEMENTS_DB_PATH` environment variable
+   - Use this to override automatic detection
+   - Example: `ENTITLEMENTS_DB_PATH=/var/lib/jpv-os/entitlements.db`
+
+4. **Fallback (Not Recommended for Production):** Application directory
+   - Used only if environment is not Azure App Service, container, or explicitly configured
+   - May not persist across deployments in some environments
+
+**Database Features:**
 - Automatically created on first run
-- Located in the application working directory
-- Permissions: Ensure write access to the directory containing the database file
-- Backup: Implement regular backups of this file
+- Automatic table initialization with schema
+- Comprehensive error logging for troubleshooting
+- Write permission validation with helpful error messages
+- Proper transaction handling and idempotency
 
 ### Security Considerations
 
@@ -121,6 +151,7 @@ ASPNETCORE_HTTP_PORTS=8080                             # HTTP port (used in cont
 - Never commit secrets to version control
 - Use HTTPS in production (enabled by default in non-development environments)
 - HSTS is enabled by default (30-day max-age)
+- Database file should be owned by the application user with restricted permissions (644 or 600)
 
 ## Cloudflare / Static Hosting Notes
 
@@ -294,12 +325,33 @@ curl -I http://localhost:8080/health
 ```
 If the endpoint returns 5xx errors, check application logs.
 
-**Database file not found:**
-Ensure the application has write permissions in its working directory. Create `entitlements.db` manually if needed:
-```bash
-touch entitlements.db
-chmod 644 entitlements.db
+**Database file not found or initialization fails:**
+- Verify the directory exists and is writable by the application user
+- Check application logs for specific error messages
+- Ensure `ASPNETCORE_ENVIRONMENT=Production` is set (or database detection will be skipped)
+- For custom paths, verify `ENTITLEMENTS_DB_PATH` is set correctly and directory exists:
+  ```bash
+  mkdir -p /path/to/database/directory
+  chmod 755 /path/to/database/directory
+  ```
+
+**Permission denied errors:**
 ```
+Failed to create entitlements database. Check directory write permissions.
+```
+- Ensure application user owns the database directory with write permissions
+- For Docker: Ensure volume is mounted with correct permissions
+- For Azure App Service: `/home` directory should be automatically writable
+
+**Database is read-only:**
+- Check file permissions: `ls -la entitlements.db`
+- Ensure owner is the application user (usually `app` in containers)
+- Fix permissions: `chmod 644 entitlements.db`
+
+**Database connection timeout:**
+- Check if the SQLite file is locked by another process
+- Ensure only one application instance accesses the database
+- For scale-out deployments, migrate to a shared database (SQL Server, PostgreSQL)
 
 **Stripe webhook not processing:**
 - Verify webhook endpoint is publicly accessible
@@ -309,6 +361,15 @@ chmod 644 entitlements.db
 **Discord OAuth failing:**
 - Verify DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET
 - Confirm DISCORD_REDIRECT_URI matches registered redirect URI in Discord app settings
+
+### Database Path Detection Priority
+
+The application uses the following priority for database path selection (in order):
+
+1. `ENTITLEMENTS_DB_PATH` environment variable (if explicitly set)
+2. Azure App Service: `/home/entitlements.db` (if `WEBSITE_INSTANCE_ID` detected)
+3. Container: `/app/data/entitlements.db` (if `/app/data` exists or container detected)
+4. Default: `{AppContext.BaseDirectory}/entitlements.db` (fallback, not recommended for production)
 
 ### Logs
 
@@ -330,6 +391,14 @@ fly logs
 
 **Production (Render):**
 Logs available in Render dashboard under deployment logs.
+
+**Database Initialization Logs:**
+Look for "Entitlements database" messages in application logs:
+- `"Entitlements database configured for production deployment"` - Normal startup
+- `"Created entitlements database directory"` - New directory created
+- `"Created new entitlements database"` - New database file created
+- `"Entitlements table ensured"` - Schema initialized
+- `"Failed to initialize entitlements database"` - Critical error, check logs for details
 
 ## Architecture Notes
 
