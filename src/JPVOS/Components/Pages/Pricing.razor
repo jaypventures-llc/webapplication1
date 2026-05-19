@@ -38,11 +38,11 @@
                     </div>
                     @if (IsDisabled(pkg))
                     {
-                        <a href="@pkg.Access" class="button public-btn public-btn-secondary" style="width: 100%; text-align: center;">@GetCta(pkg)</a>
+                        <a href="@pkg.Access" class="button public-btn public-btn-secondary public-btn-full">@GetCta(pkg)</a>
                     }
                     else
                     {
-                        <a href="@GetCheckoutUrl(pkg)" class="button public-btn public-btn-primary" style="width: 100%; text-align: center;">@GetCta(pkg)</a>
+                        <a href="@GetCheckoutUrl(pkg)" class="button public-btn public-btn-primary public-btn-full">@GetCta(pkg)</a>
                     }
                 </div>
             }

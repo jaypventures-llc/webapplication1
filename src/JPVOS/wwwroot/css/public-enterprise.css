@@ -539,6 +539,11 @@
   text-align: center;
 }
 
+.public-btn-full {
+  width: 100%;
+  text-align: center;
+}
+
 /* =============================================================================
    ACCESS CARDS (Public routing, not admin controls)
    ============================================================================= */
