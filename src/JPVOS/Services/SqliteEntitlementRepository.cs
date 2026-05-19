@@ -135,7 +135,7 @@ public class SqliteEntitlementRepository : IEntitlementRepository
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to get entitlement by Stripe customer ID: {CustomerId}", customerId);
+            _logger?.LogError(ex, "Failed to get entitlement by Stripe customer ID: {CustomerIdHash}", ComputeHash(customerId));
             throw;
         }
     }
@@ -149,7 +149,7 @@ public class SqliteEntitlementRepository : IEntitlementRepository
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to get entitlement by Stripe subscription ID: {SubscriptionId}", subscriptionId);
+            _logger?.LogError(ex, "Failed to get entitlement by Stripe subscription ID: {SubscriptionIdHash}", ComputeHash(subscriptionId));
             throw;
         }
     }
@@ -163,7 +163,7 @@ public class SqliteEntitlementRepository : IEntitlementRepository
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to get entitlement by Discord user ID: {DiscordUserId}", discordUserId);
+            _logger?.LogError(ex, "Failed to get entitlement by Discord user ID: {DiscordUserIdHash}", ComputeHash(discordUserId));
             throw;
         }
     }
@@ -231,12 +231,12 @@ public class SqliteEntitlementRepository : IEntitlementRepository
             var count = db.Execute("DELETE FROM Entitlements WHERE StripeCustomerId = @customerId", new { customerId });
             if (count > 0)
             {
-                _logger?.LogInformation("Removed entitlement for Stripe customer: {CustomerId}", customerId);
+                _logger?.LogInformation("Removed entitlement for Stripe customer: {CustomerIdHash}", ComputeHash(customerId));
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to remove entitlement by Stripe customer ID: {CustomerId}", customerId);
+            _logger?.LogError(ex, "Failed to remove entitlement by Stripe customer ID: {CustomerIdHash}", ComputeHash(customerId));
             throw;
         }
     }
@@ -249,12 +249,12 @@ public class SqliteEntitlementRepository : IEntitlementRepository
             var count = db.Execute("DELETE FROM Entitlements WHERE StripeSubscriptionId = @subscriptionId", new { subscriptionId });
             if (count > 0)
             {
-                _logger?.LogInformation("Removed entitlement for Stripe subscription: {SubscriptionId}", subscriptionId);
+                _logger?.LogInformation("Removed entitlement for Stripe subscription: {SubscriptionIdHash}", ComputeHash(subscriptionId));
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to remove entitlement by Stripe subscription ID: {SubscriptionId}", subscriptionId);
+            _logger?.LogError(ex, "Failed to remove entitlement by Stripe subscription ID: {SubscriptionIdHash}", ComputeHash(subscriptionId));
             throw;
         }
     }
