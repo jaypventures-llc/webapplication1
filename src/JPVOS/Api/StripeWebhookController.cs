@@ -131,6 +131,7 @@ public class StripeWebhookController : ControllerBase
           auditCustomerId = customerId;
           auditSubscriptionId = subscriptionId;
           auditStatus = "active";
+          handledSuccessfully = true;
           break;
         }
       case "invoice.paid":
