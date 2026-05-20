@@ -297,8 +297,16 @@ public class StripeWebhookController : ControllerBase
             // Remove Discord role if linked
             if (!string.IsNullOrEmpty(ent.DiscordUserId) && !string.IsNullOrEmpty(ent.DiscordRole))
             {
-              _ = _discordService.RemoveRoleAsync(ent.DiscordUserId, ent.DiscordRole);
-              _logger.LogInformation("Discord role {DiscordRole} revoked for user {DiscordUserId}", ent.DiscordRole, ent.DiscordUserId);
+              try
+              {
+                await _discordService.RemoveRoleAsync(ent.DiscordUserId, ent.DiscordRole);
+                _logger.LogInformation("Discord role {DiscordRole} revoked for user {DiscordUserId}", ent.DiscordRole, ent.DiscordUserId);
+              }
+              catch (Exception ex)
+              {
+                _logger.LogError(ex, "Failed to revoke Discord role {DiscordRole} for user {DiscordUserId}", ent.DiscordRole, ent.DiscordUserId);
+                return StatusCode(502, "Failed to revoke Discord role.");
+              }
             }
             _entitlementService.RemoveByStripeCustomerId(customerId);
             _logger.LogWarning("Subscription deleted for customer {CustomerId}, entitlement revoked", customerId);
@@ -354,4 +362,5 @@ public class StripeWebhookController : ControllerBase
     return null;
   }
 }
+
 
