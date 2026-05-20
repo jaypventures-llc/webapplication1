@@ -72,7 +72,10 @@ public class StripeWebhookController : ControllerBase
 
 
     // Handle events
-    bool handledSuccessfully = false;
+    string? auditCustomerId = null;
+    string? auditSubscriptionId = null;
+    string? auditStatus = null;
+
     switch (stripeEvent.Type)
     {
       case "checkout.session.completed":
@@ -124,7 +127,9 @@ public class StripeWebhookController : ControllerBase
           _entitlementService.AddOrUpdate(ent);
           _logger.LogInformation("Checkout session completed for customer {CustomerId}", customerId);
           // Discord role assignment deferred until Discord user is linked
-          handledSuccessfully = true;
+          auditCustomerId = customerId;
+          auditSubscriptionId = subscriptionId;
+          auditStatus = "active";
           break;
         }
       case "invoice.paid":
@@ -162,6 +167,9 @@ public class StripeWebhookController : ControllerBase
             _logger.LogInformation("Invoice paid for customer {CustomerId}", customerId);
             handledSuccessfully = true;
           }
+          auditCustomerId = customerId;
+          auditSubscriptionId = invoice.Parent?.SubscriptionDetails?.SubscriptionId;
+          auditStatus = ent?.Status ?? "active";
           break;
         }
       case "invoice.payment_failed":
@@ -202,6 +210,9 @@ public class StripeWebhookController : ControllerBase
             _logger.LogWarning("Payment failed for customer {CustomerId}", customerId);
             handledSuccessfully = true;
           }
+          auditCustomerId = customerId;
+          auditSubscriptionId = invoice.Parent?.SubscriptionDetails?.SubscriptionId;
+          auditStatus = ent?.Status ?? "past_due";
           break;
         }
       case "customer.subscription.updated":
@@ -243,6 +254,9 @@ public class StripeWebhookController : ControllerBase
             _logger.LogInformation("Subscription updated for customer {CustomerId}, status: {Status}", sub.CustomerId, sub.Status);
             handledSuccessfully = true;
           }
+          auditCustomerId = sub.CustomerId;
+          auditSubscriptionId = sub.Id;
+          auditStatus = sub.Status;
           break;
         }
       case "customer.subscription.deleted":
@@ -288,6 +302,9 @@ public class StripeWebhookController : ControllerBase
             _logger.LogWarning("Subscription deleted for customer {CustomerId}, entitlement revoked", customerId);
             handledSuccessfully = true;
           }
+          auditCustomerId = sub.CustomerId;
+          auditSubscriptionId = sub.Id;
+          auditStatus = "canceled";
           break;
         }
     }
@@ -295,8 +312,10 @@ public class StripeWebhookController : ControllerBase
     {
       EventId = stripeEvent.Id,
       EventType = stripeEvent.Type,
-      Status = stripeEvent.Type,
-      EntitlementActive = stripeEvent.Type is "checkout.session.completed" or "invoice.paid" or "customer.subscription.updated",
+      CustomerId = auditCustomerId,
+      SubscriptionId = auditSubscriptionId,
+      Status = auditStatus,
+      EntitlementActive = auditStatus is "active" or "trialing",
       UpdatedAt = DateTimeOffset.UtcNow
     });
 
