@@ -72,6 +72,7 @@ public class StripeWebhookController : ControllerBase
 
 
     // Handle events
+    bool handledSuccessfully = false;
     switch (stripeEvent.Type)
     {
       case "checkout.session.completed":
@@ -123,6 +124,7 @@ public class StripeWebhookController : ControllerBase
           _entitlementService.AddOrUpdate(ent);
           _logger.LogInformation("Checkout session completed for customer {CustomerId}", customerId);
           // Discord role assignment deferred until Discord user is linked
+          handledSuccessfully = true;
           break;
         }
       case "invoice.paid":
@@ -158,6 +160,7 @@ public class StripeWebhookController : ControllerBase
             ent.AccessExpiration = null;
             _entitlementService.AddOrUpdate(ent);
             _logger.LogInformation("Invoice paid for customer {CustomerId}", customerId);
+            handledSuccessfully = true;
           }
           break;
         }
@@ -197,6 +200,7 @@ public class StripeWebhookController : ControllerBase
             ent.Status = "past_due";
             _entitlementService.AddOrUpdate(ent);
             _logger.LogWarning("Payment failed for customer {CustomerId}", customerId);
+            handledSuccessfully = true;
           }
           break;
         }
@@ -237,6 +241,7 @@ public class StripeWebhookController : ControllerBase
             ent.AccessExpiration = GetCurrentPeriodEnd(sub);
             _entitlementService.AddOrUpdate(ent);
             _logger.LogInformation("Subscription updated for customer {CustomerId}, status: {Status}", sub.CustomerId, sub.Status);
+            handledSuccessfully = true;
           }
           break;
         }
@@ -281,6 +286,7 @@ public class StripeWebhookController : ControllerBase
             }
             _entitlementService.RemoveByStripeCustomerId(customerId);
             _logger.LogWarning("Subscription deleted for customer {CustomerId}, entitlement revoked", customerId);
+            handledSuccessfully = true;
           }
           break;
         }
@@ -294,7 +300,10 @@ public class StripeWebhookController : ControllerBase
       UpdatedAt = DateTimeOffset.UtcNow
     });
 
-    _eventStore.MarkProcessed(stripeEvent.Id, stripeEvent.Type);
+    if (handledSuccessfully)
+    {
+      _eventStore.MarkProcessed(stripeEvent.Id, stripeEvent.Type);
+    }
 
     return Ok(new
     {
