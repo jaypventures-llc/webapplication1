@@ -75,6 +75,7 @@ public class StripeWebhookController : ControllerBase
     string? auditCustomerId = null;
     string? auditSubscriptionId = null;
     string? auditStatus = null;
+    bool handledSuccessfully = false;
 
     switch (stripeEvent.Type)
     {
@@ -130,6 +131,7 @@ public class StripeWebhookController : ControllerBase
           auditCustomerId = customerId;
           auditSubscriptionId = subscriptionId;
           auditStatus = "active";
+          handledSuccessfully = true;
           break;
         }
       case "invoice.paid":
@@ -165,6 +167,7 @@ public class StripeWebhookController : ControllerBase
             ent.AccessExpiration = null;
             _entitlementService.AddOrUpdate(ent);
             _logger.LogInformation("Invoice paid for customer {CustomerId}", customerId);
+            handledSuccessfully = true;
           }
           auditCustomerId = customerId;
           auditSubscriptionId = invoice.Parent?.SubscriptionDetails?.SubscriptionId;
@@ -207,6 +210,7 @@ public class StripeWebhookController : ControllerBase
             ent.Status = "past_due";
             _entitlementService.AddOrUpdate(ent);
             _logger.LogWarning("Payment failed for customer {CustomerId}", customerId);
+            handledSuccessfully = true;
           }
           auditCustomerId = customerId;
           auditSubscriptionId = invoice.Parent?.SubscriptionDetails?.SubscriptionId;
@@ -250,6 +254,7 @@ public class StripeWebhookController : ControllerBase
             ent.AccessExpiration = GetCurrentPeriodEnd(sub);
             _entitlementService.AddOrUpdate(ent);
             _logger.LogInformation("Subscription updated for customer {CustomerId}, status: {Status}", sub.CustomerId, sub.Status);
+            handledSuccessfully = true;
           }
           auditCustomerId = sub.CustomerId;
           auditSubscriptionId = sub.Id;
@@ -297,6 +302,7 @@ public class StripeWebhookController : ControllerBase
             }
             _entitlementService.RemoveByStripeCustomerId(customerId);
             _logger.LogWarning("Subscription deleted for customer {CustomerId}, entitlement revoked", customerId);
+            handledSuccessfully = true;
           }
           auditCustomerId = sub.CustomerId;
           auditSubscriptionId = sub.Id;
@@ -315,7 +321,10 @@ public class StripeWebhookController : ControllerBase
       UpdatedAt = DateTimeOffset.UtcNow
     });
 
-    _eventStore.MarkProcessed(stripeEvent.Id, stripeEvent.Type);
+    if (handledSuccessfully)
+    {
+      _eventStore.MarkProcessed(stripeEvent.Id, stripeEvent.Type);
+    }
 
     return Ok(new
     {
