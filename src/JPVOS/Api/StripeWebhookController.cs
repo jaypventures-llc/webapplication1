@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Stripe;
 using System.Text;
 using System.Text.Json;
+using JPVOS.Infrastructure.Stripe;
 
 [ApiController]
 [Route("api/stripe/webhook")]
@@ -14,17 +15,23 @@ public class StripeWebhookController : ControllerBase
   private readonly IEntitlementService _entitlementService;
   private readonly DiscordService _discordService;
   private readonly ILogger<StripeWebhookController> _logger;
+  private readonly StripeWebhookEventStore _eventStore;
+  private readonly StripeSubscriptionAuditStore _auditStore;
 
   public StripeWebhookController(
       IConfiguration config,
       IEntitlementService entitlementService,
       DiscordService discordService,
-      ILogger<StripeWebhookController> logger)
+      ILogger<StripeWebhookController> logger,
+      StripeWebhookEventStore eventStore,
+      StripeSubscriptionAuditStore auditStore)
   {
     _config = config;
     _entitlementService = entitlementService;
     _discordService = discordService;
     _logger = logger;
+    _eventStore = eventStore;
+    _auditStore = auditStore;
   }
 
   [HttpPost]
@@ -50,6 +57,19 @@ public class StripeWebhookController : ControllerBase
       _logger.LogWarning("Stripe webhook signature verification failed: {Message}", ex.Message);
       return BadRequest("Invalid Stripe signature.");
     }
+    if (_eventStore.HasProcessed(stripeEvent.Id))
+    {
+      _logger.LogInformation("Duplicate Stripe webhook event ignored: {EventId} ({EventType})", stripeEvent.Id, stripeEvent.Type);
+      return Ok(new
+      {
+        received = true,
+        duplicate = true,
+        eventId = stripeEvent.Id,
+        eventType = stripeEvent.Type
+      });
+    }
+
+
 
     // Handle events
     switch (stripeEvent.Type)
@@ -265,7 +285,24 @@ public class StripeWebhookController : ControllerBase
           break;
         }
     }
-    return Ok();
+    _auditStore.Append(new StripeSubscriptionState
+    {
+      EventId = stripeEvent.Id,
+      EventType = stripeEvent.Type,
+      Status = stripeEvent.Type,
+      EntitlementActive = stripeEvent.Type is "checkout.session.completed" or "invoice.paid" or "customer.subscription.updated",
+      UpdatedAt = DateTimeOffset.UtcNow
+    });
+
+    _eventStore.MarkProcessed(stripeEvent.Id, stripeEvent.Type);
+
+    return Ok(new
+    {
+      received = true,
+      duplicate = false,
+      eventId = stripeEvent.Id,
+      eventType = stripeEvent.Type
+    });
   }
 
   private DateTime? GetCurrentPeriodEnd(Subscription sub)
@@ -287,3 +324,4 @@ public class StripeWebhookController : ControllerBase
     return null;
   }
 }
+

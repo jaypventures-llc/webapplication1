@@ -29,6 +29,12 @@ builder.Services.AddSingleton<WixCheckoutConfig>();
 
 
 
+builder.Services.AddSingleton<
+    JPVOS.Infrastructure.Stripe.StripeWebhookEventStore>();
+
+builder.Services.AddSingleton<
+    JPVOS.Infrastructure.Stripe.StripeSubscriptionAuditStore>();
+
 var app = builder.Build();
 PeopleProtectionStartupGuard.Verify(app);
 
@@ -59,5 +65,7 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 app.Run();
+
+
 
 
