@@ -66,7 +66,7 @@ public class DiscordService
         using var req = new HttpRequestMessage(method, url);
         req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
 
-        using var response = await _http.SendAsync(req);
+        using var response = await SendWithRetryAsync(req, action, discordUserId, roleId);
         var responseBody = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
@@ -111,4 +111,5 @@ public class DiscordService
             roleId);
     }
 }
+
 
