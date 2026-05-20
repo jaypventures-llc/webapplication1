@@ -110,6 +110,52 @@ public class DiscordService
             discordUserId,
             roleId);
     }
-}
 
+    private async Task<HttpResponseMessage> SendWithRetryAsync(
+        HttpRequestMessage templateRequest,
+        string action,
+        string discordUserId,
+        string roleId)
+    {
+        const int maxAttempts = 3;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            using var request = CloneRequest(templateRequest);
+            var response = await _http.SendAsync(request);
+
+            if ((int)response.StatusCode != 429 || attempt == maxAttempts)
+            {
+                return response;
+            }
+
+            var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(attempt);
+            response.Dispose();
+
+            _logger.LogWarning(
+                "Discord role {Action} rate limited for user {DiscordUserId}, role {RoleId}. Retrying in {RetryAfterSeconds}s (attempt {Attempt}/{MaxAttempts}).",
+                action,
+                discordUserId,
+                roleId,
+                retryAfter.TotalSeconds,
+                attempt,
+                maxAttempts);
+
+            await Task.Delay(retryAfter);
+        }
+
+        throw new InvalidOperationException("Retry loop exhausted unexpectedly.");
+    }
+
+    private static HttpRequestMessage CloneRequest(HttpRequestMessage request)
+    {
+        var clone = new HttpRequestMessage(request.Method, request.RequestUri);
+        foreach (var header in request.Headers)
+        {
+            clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
+
+        return clone;
+    }
+}
 
